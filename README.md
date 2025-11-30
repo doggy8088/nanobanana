@@ -1,4 +1,4 @@
-> [!NOTE]  
+> [!NOTE]
 > Nano Banana Pro (`gemini-3-pro-image-preview`) is now supported in this extension (v1.0.10+)!
 >
 > Set the `NANOBANANA_MODEL` environment variable to `gemini-3-pro-image-preview` to use it.
@@ -25,6 +25,9 @@ A professional Gemini CLI extension for generating and manipulating images using
      normally authenticate to Gemini CLI using the "Login with Google" option)
    - `GEMINI_API_KEY` (fallback)
    - `GOOGLE_API_KEY` (fallback)
+4. **Azure Blob Storage (Optional)**: Set `NANOBANANA_AZURE_BLOB_SAS_URL` to enable automatic image upload to Azure Blob Storage:
+   - Format: `https://<storage-account>.blob.core.windows.net/<container>?<sas-token>`
+   - When configured, generated images will be uploaded and their URLs returned to the MCP client
 
 For authentication setup, see the [official Gemini CLI documentation](https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/authentication.md).
 
@@ -179,7 +182,7 @@ The `/generate` command supports advanced options for creating multiple variatio
 
 **`--count=N`** - Number of variations (1-8, default: 1)
 **`--styles="style1,style2"`** - Comma-separated artistic styles
-**`--variations="var1,var2"`** - Specific variation types  
+**`--variations="var1,var2"`** - Specific variation types
 **`--format=grid|separate`** - Output format (default: separate)
 **`--resolution=1K|2K|4K`** - Output image resolution (default: 4K)
 **`--seed=123`** - Seed for reproducible variations

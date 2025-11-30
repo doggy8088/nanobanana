@@ -535,11 +535,23 @@ class NanoBananaServer {
         }
 
         if (response.success) {
+          let resultText = response.message;
+
+          // Add image URLs if available (Azure Blob Storage)
+          if (response.imageUrls && response.imageUrls.length > 0) {
+            resultText += `\n\nImage URLs:\n${response.imageUrls.map((url) => `• ${url}`).join('\n')}`;
+          }
+
+          // Add local file paths
+          if (response.generatedFiles && response.generatedFiles.length > 0) {
+            resultText += `\n\nLocal files:\n${response.generatedFiles.map((f) => `• ${f}`).join('\n')}`;
+          }
+
           return {
             content: [
               {
                 type: 'text',
-                text: `${response.message}\n\nGenerated files:\n${response.generatedFiles?.map((f) => `• ${f}`).join('\n') || 'None'}`, 
+                text: resultText,
               },
             ],
           };

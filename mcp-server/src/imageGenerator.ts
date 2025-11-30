@@ -5,6 +5,7 @@
  */
 
 import { FileHandler } from './fileHandler.js';
+import { BlobUploader } from './blobUploader.js';
 import {
   ImageGenerationRequest,
   ImageGenerationResponse,
@@ -44,6 +45,7 @@ interface GeminiResponse {
 export class ImageGenerator {
   private apiKey: string;
   private modelName: string;
+  private blobUploader: BlobUploader;
   private static readonly DEFAULT_MODEL = 'gemini-2.5-flash-image';
   private static readonly DEFAULT_RESOLUTION: ImageResolution = '1K';
   private static readonly API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
@@ -52,6 +54,7 @@ export class ImageGenerator {
     this.apiKey = authConfig.apiKey;
     this.modelName =
       process.env.NANOBANANA_MODEL || ImageGenerator.DEFAULT_MODEL;
+    this.blobUploader = new BlobUploader();
     console.error(`DEBUG - Using image model: ${this.modelName}`);
   }
 
@@ -85,18 +88,18 @@ export class ImageGenerator {
     // gemini-2.5-flash-image: only supports aspectRatio
     // gemini-3-pro-image-preview: supports aspectRatio and imageSize (1K/2K/4K)
     const isGemini3 = this.modelName.includes('gemini-3');
-    
+
     interface ImageConfig {
       aspectRatio?: string;
       imageSize?: string;
     }
-    
+
     const imageConfig: ImageConfig = {};
-    
+
     if (aspectRatio) {
       imageConfig.aspectRatio = aspectRatio;
     }
-    
+
     // Only add imageSize for Gemini 3 models
     if (isGemini3 && resolution) {
       imageConfig.imageSize = resolution;
@@ -449,6 +452,9 @@ export class ImageGenerator {
         };
       }
 
+      // Upload to Azure Blob Storage if configured
+      const imageUrls = await this.blobUploader.uploadFiles(generatedFiles);
+
       // Handle preview if requested
       await this.handlePreview(generatedFiles, request);
 
@@ -456,6 +462,7 @@ export class ImageGenerator {
         success: true,
         message: `Successfully generated ${generatedFiles.length} image variation(s)`,
         generatedFiles,
+        imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
       };
     } catch (error: unknown) {
       console.error('DEBUG - Error in generateTextToImage:', error);
@@ -525,14 +532,14 @@ export class ImageGenerator {
         const style = args?.style || 'consistent';
         const transition = args?.transition || 'smooth';
         let firstError: string | null = null;
-  
+
         console.error(`DEBUG - Generating ${steps}-step ${type} sequence`);
-  
+
         // Generate each step of the story/process
         for (let i = 0; i < steps; i++) {
           const stepNumber = i + 1;
           let stepPrompt = `${request.prompt}, step ${stepNumber} of ${steps}`;
-  
+
           // Add context based on type
           switch (type) {
             case 'story':
@@ -548,14 +555,14 @@ export class ImageGenerator {
               stepPrompt += `, chronological progression, timeline visualization`;
               break;
           }
-  
+
           // Add transition context
           if (i > 0) {
             stepPrompt += `, ${transition} transition from previous step`;
           }
-  
+
           console.error(`DEBUG - Generating step ${stepNumber}: ${stepPrompt}`);
-  
+
           try {
             // Use REST API
             const resolution = request.resolution || ImageGenerator.DEFAULT_RESOLUTION;
@@ -564,17 +571,17 @@ export class ImageGenerator {
               resolution,
               request.aspectRatio,
             );
-  
+
             if (response.candidates && response.candidates[0]?.content?.parts) {
               for (const part of response.candidates[0].content.parts) {
                 let imageBase64: string | undefined;
-  
+
                 if (part.inlineData?.data) {
                   imageBase64 = part.inlineData.data;
                 } else if (part.text && this.isValidBase64ImageData(part.text)) {
                   imageBase64 = part.text;
                 }
-  
+
                 if (imageBase64) {
                   const filename = FileHandler.generateFilename(
                     `${type}step${stepNumber}${request.prompt}`,
@@ -609,7 +616,7 @@ export class ImageGenerator {
               };
             }
           }
-  
+
           // Check if this step was actually generated
           if (generatedFiles.length < stepNumber) {
             console.error(
@@ -617,11 +624,11 @@ export class ImageGenerator {
             );
           }
         }
-  
+
         console.error(
           `DEBUG - Story generation completed. Generated ${generatedFiles.length} out of ${steps} requested images`,
         );
-  
+
         if (generatedFiles.length === 0) {
           return {
             success: false,
@@ -629,19 +636,23 @@ export class ImageGenerator {
             error: firstError || 'No image data found in API responses',
           };
         }
-  
+
+        // Upload to Azure Blob Storage if configured
+        const imageUrls = await this.blobUploader.uploadFiles(generatedFiles);
+
         // Handle preview if requested
         await this.handlePreview(generatedFiles, request);
-  
+
         const wasFullySuccessful = generatedFiles.length === steps;
         const successMessage = wasFullySuccessful
           ? `Successfully generated complete ${steps}-step ${type} sequence`
           : `Generated ${generatedFiles.length} out of ${steps} requested ${type} steps (${steps - generatedFiles.length} steps failed)`;
-  
+
         return {
           success: true,
           message: successMessage,
           generatedFiles,
+          imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
         };
       } catch (error: unknown) {
         console.error('DEBUG - Error in generateStorySequence:', error);
@@ -738,6 +749,9 @@ export class ImageGenerator {
           );
         }
 
+        // Upload to Azure Blob Storage if configured
+        const imageUrls = await this.blobUploader.uploadFiles(generatedFiles);
+
         // Handle preview if requested
         await this.handlePreview(generatedFiles, request);
 
@@ -745,6 +759,7 @@ export class ImageGenerator {
           success: true,
           message: `Successfully ${request.mode}d image`,
           generatedFiles,
+          imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
         };
       }
 

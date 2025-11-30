@@ -31,6 +31,7 @@ export interface ImageGenerationResponse {
   success: boolean;
   message: string;
   generatedFiles?: string[];
+  imageUrls?: string[];
   error?: string;
 }
 
