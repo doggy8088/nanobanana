@@ -76,6 +76,69 @@ Restart the Gemini CLI. The following commands will be available:
 - `/diagram` - Generate technical diagrams, flowcharts, and architectural mockups
 - `/nanobanana` - Natural language interface
 
+## 🤖 ChatGPT Installation (MCP over SSE)
+
+If you want to use Nano Banana Pro with ChatGPT via MCP over SSE transport, follow these steps:
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/gemini-cli-extensions/nanobanana.git
+cd nanobanana
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Install mcp-proxy
+
+Install the MCP proxy tool globally:
+
+```bash
+uv tool install mcp-proxy
+```
+
+### 4. Set Environment Variables (PowerShell)
+
+```powershell
+$env:NANOBANANA_MODEL='gemini-3-pro-image-preview'
+$env:NANOBANANA_GEMINI_API_KEY=$env:GEMINI_API_KEY
+$env:NANOBANANA_AZURE_BLOB_SAS_URL=''
+```
+
+### 5. Start MCP Server with SSE Transport
+
+```bash
+mcp-proxy --port 3020 --pass-environment -- node mcp-server/dist/index.js
+```
+
+### 6. Configure Cloudflare Tunnel
+
+Set up a Cloudflare Tunnel to expose your local MCP server to the internet:
+
+```bash
+cloudflared tunnel --url http://localhost:3020
+```
+
+Then use the generated Cloudflare URL in your ChatGPT MCP configuration.
+
+### 7. Setup in ChatGPT
+
+Configure your MCP connection in ChatGPT with the following settings:
+
+| Setting            | Value                                          |
+| ------------------ | ---------------------------------------------- |
+| **Name**           | `Nano Banana Pro`                              |
+| **Description**    | 這個 MCP 可以用 Nano Banana Pro 來生成 4K 圖像 |
+| **MCP Server URL** | `https://YOUR-DOMAIN/sse`                      |
+| **Authentication** | No Authentication                              |
+
+> [!TIP]
+> Replace `YOUR-DOMAIN` with your Cloudflare Tunnel domain.
+
 ## 💡 Usage
 
 The extension provides multiple command options for different use cases:
