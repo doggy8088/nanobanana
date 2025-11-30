@@ -12,6 +12,7 @@ import {
   AuthConfig,
   StorySequenceArgs,
   ImageResolution,
+  GeneratedImageInfo,
 } from './types.js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -452,8 +453,14 @@ export class ImageGenerator {
         };
       }
 
-      // Upload to Azure Blob Storage if configured
-      const imageUrls = await this.blobUploader.uploadFiles(generatedFiles);
+      // Build image info with upload to Azure Blob Storage if configured
+      const resolution = request.resolution || ImageGenerator.DEFAULT_RESOLUTION;
+      const images = await this.blobUploader.buildImageInfos(generatedFiles, {
+        resolution,
+        aspectRatio: request.aspectRatio,
+        seed: request.seed,
+        format: request.fileFormat,
+      });
 
       // Handle preview if requested
       await this.handlePreview(generatedFiles, request);
@@ -462,7 +469,8 @@ export class ImageGenerator {
         success: true,
         message: `Successfully generated ${generatedFiles.length} image variation(s)`,
         generatedFiles,
-        imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+        imageUrls: images.filter(img => img.url).map(img => img.url!),
+        images,
       };
     } catch (error: unknown) {
       console.error('DEBUG - Error in generateTextToImage:', error);
@@ -637,8 +645,14 @@ export class ImageGenerator {
           };
         }
 
-        // Upload to Azure Blob Storage if configured
-        const imageUrls = await this.blobUploader.uploadFiles(generatedFiles);
+        // Build image info with upload to Azure Blob Storage if configured
+        const resolution = request.resolution || ImageGenerator.DEFAULT_RESOLUTION;
+        const images = await this.blobUploader.buildImageInfos(generatedFiles, {
+          resolution,
+          aspectRatio: request.aspectRatio,
+          seed: request.seed,
+          format: request.fileFormat,
+        });
 
         // Handle preview if requested
         await this.handlePreview(generatedFiles, request);
@@ -652,7 +666,8 @@ export class ImageGenerator {
           success: true,
           message: successMessage,
           generatedFiles,
-          imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+          imageUrls: images.filter(img => img.url).map(img => img.url!),
+          images,
         };
       } catch (error: unknown) {
         console.error('DEBUG - Error in generateStorySequence:', error);
@@ -749,8 +764,13 @@ export class ImageGenerator {
           );
         }
 
-        // Upload to Azure Blob Storage if configured
-        const imageUrls = await this.blobUploader.uploadFiles(generatedFiles);
+        // Build image info with upload to Azure Blob Storage if configured
+        const images = await this.blobUploader.buildImageInfos(generatedFiles, {
+          resolution,
+          aspectRatio: request.aspectRatio,
+          seed: request.seed,
+          format: request.fileFormat,
+        });
 
         // Handle preview if requested
         await this.handlePreview(generatedFiles, request);
@@ -759,7 +779,8 @@ export class ImageGenerator {
           success: true,
           message: `Successfully ${request.mode}d image`,
           generatedFiles,
-          imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+          imageUrls: images.filter(img => img.url).map(img => img.url!),
+          images,
         };
       }
 

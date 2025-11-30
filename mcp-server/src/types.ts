@@ -7,6 +7,16 @@
 export type ImageResolution = '1K' | '2K' | '4K';
 export type AspectRatio = '1:1' | '2:3' | '3:2' | '3:4' | '4:3' | '4:5' | '5:4' | '9:16' | '16:9' | '21:9';
 
+export interface GeneratedImageInfo {
+  url?: string;
+  localPath: string;
+  fileSize: number;
+  format: 'png' | 'jpeg';
+  resolution?: ImageResolution;
+  aspectRatio?: AspectRatio;
+  seed?: number;
+}
+
 export interface ImageGenerationRequest {
   prompt: string;
   inputImage?: string;
@@ -32,6 +42,7 @@ export interface ImageGenerationResponse {
   message: string;
   generatedFiles?: string[];
   imageUrls?: string[];
+  images?: GeneratedImageInfo[];
   error?: string;
 }
 

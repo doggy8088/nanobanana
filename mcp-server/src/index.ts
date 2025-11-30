@@ -18,7 +18,44 @@ import {
   IconPromptArgs,
   PatternPromptArgs,
   DiagramPromptArgs,
+  GeneratedImageInfo,
 } from './types.js';
+
+/**
+ * Format file size in human-readable format
+ */
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+/**
+ * Format image info for display
+ */
+function formatImageInfo(image: GeneratedImageInfo, index: number): string {
+  const lines: string[] = [];
+  lines.push(`Image ${index + 1}:`);
+
+  if (image.url) {
+    lines.push(`  URL: ${image.url}`);
+  }
+  lines.push(`  Local: ${image.localPath}`);
+  lines.push(`  Size: ${formatFileSize(image.fileSize)}`);
+  lines.push(`  Format: ${image.format.toUpperCase()}`);
+
+  if (image.resolution) {
+    lines.push(`  Resolution: ${image.resolution}`);
+  }
+  if (image.aspectRatio) {
+    lines.push(`  Aspect Ratio: ${image.aspectRatio}`);
+  }
+  if (image.seed !== undefined) {
+    lines.push(`  Seed: ${image.seed}`);
+  }
+
+  return lines.join('\n');
+}
 
 class NanoBananaServer {
   private server: Server;
@@ -537,14 +574,20 @@ class NanoBananaServer {
         if (response.success) {
           let resultText = response.message;
 
-          // Add image URLs if available (Azure Blob Storage)
-          if (response.imageUrls && response.imageUrls.length > 0) {
-            resultText += `\n\nImage URLs:\n${response.imageUrls.map((url) => `• ${url}`).join('\n')}`;
-          }
+          // Add detailed image info if available
+          if (response.images && response.images.length > 0) {
+            resultText += '\n\n' + response.images.map((img, idx) => formatImageInfo(img, idx)).join('\n\n');
+          } else {
+            // Fallback to simple format if images info not available
+            // Add image URLs if available (Azure Blob Storage)
+            if (response.imageUrls && response.imageUrls.length > 0) {
+              resultText += `\n\nImage URLs:\n${response.imageUrls.map((url) => `• ${url}`).join('\n')}`;
+            }
 
-          // Add local file paths
-          if (response.generatedFiles && response.generatedFiles.length > 0) {
-            resultText += `\n\nLocal files:\n${response.generatedFiles.map((f) => `• ${f}`).join('\n')}`;
+            // Add local file paths
+            if (response.generatedFiles && response.generatedFiles.length > 0) {
+              resultText += `\n\nLocal files:\n${response.generatedFiles.map((f) => `• ${f}`).join('\n')}`;
+            }
           }
 
           return {

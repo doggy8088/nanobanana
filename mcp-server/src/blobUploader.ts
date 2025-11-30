@@ -6,6 +6,12 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { GeneratedImageInfo, ImageResolution, AspectRatio } from './types.js';
+
+export interface UploadResult {
+  url: string;
+  fileSize: number;
+}
 
 /**
  * Azure Blob Storage uploader using SAS Token URL
@@ -34,9 +40,9 @@ export class BlobUploader {
   /**
    * Upload a file to Azure Blob Storage
    * @param filePath - Local file path to upload
-   * @returns The public URL of the uploaded blob, or null if upload failed
+   * @returns Upload result with URL and file size, or null if upload failed
    */
-  async uploadFile(filePath: string): Promise<string | null> {
+  async uploadFile(filePath: string): Promise<UploadResult | null> {
     if (!this.containerSasUrl) {
       console.error('DEBUG - Azure Blob Storage not configured, skipping upload');
       return null;
@@ -45,6 +51,7 @@ export class BlobUploader {
     try {
       const fileName = path.basename(filePath);
       const fileContent = fs.readFileSync(filePath);
+      const fileSize = fileContent.length;
 
       // Determine content type based on file extension
       const ext = path.extname(filePath).toLowerCase();
@@ -69,7 +76,7 @@ export class BlobUploader {
         headers: {
           'Content-Type': contentType,
           'x-ms-blob-type': 'BlockBlob',
-          'Content-Length': fileContent.length.toString(),
+          'Content-Length': fileSize.toString(),
         },
         body: fileContent,
       });
@@ -86,7 +93,7 @@ export class BlobUploader {
       const publicUrl = `${containerBaseUrl}/${uniqueFileName}`;
       console.error(`DEBUG - Successfully uploaded to: ${publicUrl}`);
 
-      return publicUrl;
+      return { url: publicUrl, fileSize };
     } catch (error: unknown) {
       console.error(
         'DEBUG - Error uploading to Azure Blob Storage:',
@@ -97,20 +104,57 @@ export class BlobUploader {
   }
 
   /**
-   * Upload multiple files to Azure Blob Storage
-   * @param filePaths - Array of local file paths to upload
-   * @returns Array of public URLs for successfully uploaded blobs
+   * Get file size of a local file
    */
-  async uploadFiles(filePaths: string[]): Promise<string[]> {
-    const urls: string[] = [];
+  getFileSize(filePath: string): number {
+    try {
+      const stats = fs.statSync(filePath);
+      return stats.size;
+    } catch {
+      return 0;
+    }
+  }
+
+  /**
+   * Build GeneratedImageInfo for files with optional upload
+   * @param filePaths - Array of local file paths
+   * @param options - Generation options (resolution, aspectRatio, seed, format)
+   * @returns Array of GeneratedImageInfo objects
+   */
+  async buildImageInfos(
+    filePaths: string[],
+    options: {
+      resolution?: ImageResolution;
+      aspectRatio?: AspectRatio;
+      seed?: number;
+      format?: 'png' | 'jpeg';
+    }
+  ): Promise<GeneratedImageInfo[]> {
+    const imageInfos: GeneratedImageInfo[] = [];
 
     for (const filePath of filePaths) {
-      const url = await this.uploadFile(filePath);
-      if (url) {
-        urls.push(url);
+      const ext = path.extname(filePath).toLowerCase();
+      const format = ext === '.png' ? 'png' : 'jpeg';
+      const fileSize = this.getFileSize(filePath);
+
+      const info: GeneratedImageInfo = {
+        localPath: filePath,
+        fileSize,
+        format: options.format || format,
+        resolution: options.resolution,
+        aspectRatio: options.aspectRatio,
+        seed: options.seed,
+      };
+
+      // Upload to Azure Blob Storage if configured
+      const uploadResult = await this.uploadFile(filePath);
+      if (uploadResult) {
+        info.url = uploadResult.url;
       }
+
+      imageInfos.push(info);
     }
 
-    return urls;
+    return imageInfos;
   }
 }
