@@ -162,8 +162,15 @@ export class ImageGenerator {
         case 'darwin': // macOS
           await execFileAsync('open', [filePath]);
           break;
-        case 'win32': // Windows
-          await execFileAsync('cmd', ['/c', 'start', '', filePath]);
+        case 'win32':
+          // Use PowerShell's Invoke-Item which safely opens files
+          // -LiteralPath treats the path literally without wildcard expansion
+          await execFileAsync('powershell', [
+            '-NoProfile',
+            '-NonInteractive',
+            '-Command',
+            `Invoke-Item -LiteralPath '${filePath.replace(/'/g, "''")}'`,
+          ]);
           break;
         default: // Linux and others
           await execFileAsync('xdg-open', [filePath]);

@@ -27,10 +27,17 @@ export class FileHandler {
     resolvedPath: string,
     allowedPaths: string[],
   ): boolean {
-    const normalizedResolved = path.normalize(resolvedPath);
+    const normalizedResolved = path.resolve(resolvedPath);
     return allowedPaths.some((allowedPath) => {
-      const normalizedAllowed = path.normalize(allowedPath);
-      return normalizedResolved.startsWith(normalizedAllowed + path.sep);
+      const normalizedAllowed = path.resolve(allowedPath);
+      // Use path.relative() to check if the path is within the allowed directory
+      // If relative path starts with '..', it means the path escapes the allowed directory
+      const relative = path.relative(normalizedAllowed, normalizedResolved);
+      return (
+        relative !== '' &&
+        !relative.startsWith('..') &&
+        !path.isAbsolute(relative)
+      );
     });
   }
 
@@ -80,9 +87,14 @@ export class FileHandler {
 
     for (const searchPath of searchPaths) {
       const fullPath = path.resolve(path.join(searchPath, sanitizedFilename));
-      // Verify the resolved path stays within the search path (defense in depth)
+      const resolvedSearchPath = path.resolve(searchPath);
+      // Use path.relative() for robust path traversal prevention
+      // If relative path starts with '..', it means the path escapes the search path
+      const relative = path.relative(resolvedSearchPath, fullPath);
       if (
-        fullPath.startsWith(path.resolve(searchPath)) &&
+        relative !== '' &&
+        !relative.startsWith('..') &&
+        !path.isAbsolute(relative) &&
         fs.existsSync(fullPath)
       ) {
         return {
