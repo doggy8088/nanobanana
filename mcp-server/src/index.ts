@@ -13,12 +13,25 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { ImageGenerator } from './imageGenerator.js';
-import {
+import type {
   ImageGenerationRequest,
   IconPromptArgs,
   PatternPromptArgs,
   DiagramPromptArgs,
+  StorySequenceArgs,
 } from './types.js';
+
+/**
+ * Validates that a required string parameter exists and is non-empty.
+ */
+function validateStringParam(
+  value: unknown,
+  paramName: string,
+): asserts value is string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`${paramName} is required and must be a non-empty string`);
+  }
+}
 
 class NanoBananaServer {
   private server: Server;
@@ -419,8 +432,9 @@ class NanoBananaServer {
 
         switch (name) {
           case 'generate_image': {
+            validateStringParam(args?.prompt, 'prompt');
             const imageRequest: ImageGenerationRequest = {
-              prompt: args?.prompt as string,
+              prompt: args.prompt,
               outputCount: (args?.outputCount as number) || 1,
               mode: 'generate',
               styles: args?.styles as string[],
@@ -439,9 +453,11 @@ class NanoBananaServer {
           }
 
           case 'edit_image': {
+            validateStringParam(args?.prompt, 'prompt');
+            validateStringParam(args?.file, 'file');
             const editRequest: ImageGenerationRequest = {
-              prompt: args?.prompt as string,
-              inputImage: args?.file as string,
+              prompt: args.prompt,
+              inputImage: args.file,
               mode: 'edit',
               preview: args?.preview as boolean,
               noPreview:
@@ -453,9 +469,11 @@ class NanoBananaServer {
           }
 
           case 'restore_image': {
+            validateStringParam(args?.prompt, 'prompt');
+            validateStringParam(args?.file, 'file');
             const restoreRequest: ImageGenerationRequest = {
-              prompt: args?.prompt as string,
-              inputImage: args?.file as string,
+              prompt: args.prompt,
+              inputImage: args.file,
               mode: 'restore',
               preview: args?.preview as boolean,
               noPreview:
@@ -467,8 +485,9 @@ class NanoBananaServer {
           }
 
           case 'generate_icon': {
+            // Icon prompt defaults to 'app icon' if not provided
             const iconRequest: ImageGenerationRequest = {
-              prompt: this.buildIconPrompt(args),
+              prompt: this.buildIconPrompt(args as IconPromptArgs | undefined),
               outputCount: (args?.sizes as number[])?.length || 1,
               mode: 'generate',
               fileFormat: (args?.format as 'png' | 'jpeg') || 'jpeg',
@@ -483,8 +502,11 @@ class NanoBananaServer {
           }
 
           case 'generate_pattern': {
+            // Pattern prompt defaults to 'abstract pattern' if not provided
             const patternRequest: ImageGenerationRequest = {
-              prompt: this.buildPatternPrompt(args),
+              prompt: this.buildPatternPrompt(
+                args as PatternPromptArgs | undefined,
+              ),
               outputCount: 1,
               mode: 'generate',
               preview: args?.preview as boolean,
@@ -498,8 +520,9 @@ class NanoBananaServer {
           }
 
           case 'generate_story': {
+            validateStringParam(args?.prompt, 'prompt');
             const storyRequest: ImageGenerationRequest = {
-              prompt: args?.prompt as string,
+              prompt: args.prompt,
               outputCount: (args?.steps as number) || 4,
               mode: 'generate',
               variations: ['sequence-step'],
@@ -510,14 +533,17 @@ class NanoBananaServer {
             };
             response = await this.imageGenerator.generateStorySequence(
               storyRequest,
-              args,
+              args as StorySequenceArgs | undefined,
             );
             break;
           }
 
           case 'generate_diagram': {
+            // Diagram prompt defaults to 'system diagram' if not provided
             const diagramRequest: ImageGenerationRequest = {
-              prompt: this.buildDiagramPrompt(args),
+              prompt: this.buildDiagramPrompt(
+                args as DiagramPromptArgs | undefined,
+              ),
               outputCount: 1,
               mode: 'generate',
               preview: args?.preview as boolean,

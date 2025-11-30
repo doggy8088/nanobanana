@@ -5,17 +5,17 @@
  */
 
 import { FileHandler } from './fileHandler.js';
-import {
+import type {
   ImageGenerationRequest,
   ImageGenerationResponse,
   AuthConfig,
   StorySequenceArgs,
   ImageResolution,
 } from './types.js';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 // REST API response types
 interface GeminiPart {
@@ -47,6 +47,10 @@ export class ImageGenerator {
   private static readonly DEFAULT_MODEL = 'gemini-2.5-flash-image';
   private static readonly DEFAULT_RESOLUTION: ImageResolution = '1K';
   private static readonly API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+  // Minimum length for valid base64 image data (basic sanity check)
+  private static readonly MIN_BASE64_LENGTH = 100;
+  // Minimum length for base64 data to likely be an actual image
+  private static readonly MIN_IMAGE_BASE64_LENGTH = 1000;
 
   constructor(authConfig: AuthConfig) {
     this.apiKey = authConfig.apiKey;
@@ -151,21 +155,21 @@ export class ImageGenerator {
   private async openImagePreview(filePath: string): Promise<void> {
     try {
       const platform = process.platform;
-      let command: string;
 
+      // Use execFile instead of exec to prevent command injection
+      // execFile does not spawn a shell and passes arguments safely
       switch (platform) {
         case 'darwin': // macOS
-          command = `open "${filePath}"`;
+          await execFileAsync('open', [filePath]);
           break;
         case 'win32': // Windows
-          command = `start "" "${filePath}"`;
+          await execFileAsync('cmd', ['/c', 'start', '', filePath]);
           break;
         default: // Linux and others
-          command = `xdg-open "${filePath}"`;
+          await execFileAsync('xdg-open', [filePath]);
           break;
       }
 
-      await execAsync(command);
       console.error(`DEBUG - Opened preview for: ${filePath}`);
     } catch (error: unknown) {
       console.error(
@@ -252,7 +256,7 @@ export class ImageGenerator {
 
   private isValidBase64ImageData(data: string): boolean {
     // Check if data looks like base64 image data
-    if (!data || data.length < 100) {
+    if (!data || data.length < ImageGenerator.MIN_BASE64_LENGTH) {
       return false; // Too short to be meaningful image data
     }
 
@@ -263,7 +267,7 @@ export class ImageGenerator {
     }
 
     // Additional check: base64 image data is typically quite long
-    if (data.length < 1000) {
+    if (data.length < ImageGenerator.MIN_IMAGE_BASE64_LENGTH) {
       console.error(
         'DEBUG - Skipping short data that may not be image:',
         data.length,

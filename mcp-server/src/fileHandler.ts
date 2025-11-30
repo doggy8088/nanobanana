@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import { FileSearchResult } from './types.js';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import type { FileSearchResult } from './types.js';
 
 export class FileHandler {
   private static readonly OUTPUT_DIR = 'nanobanana-output';
@@ -19,6 +19,32 @@ export class FileHandler {
     path.join(process.env.HOME || '~', 'Desktop'),
   ];
 
+  /**
+   * Validates that a resolved path stays within allowed directories.
+   * Prevents path traversal attacks by ensuring the final path is within allowed search paths.
+   */
+  private static isPathWithinAllowed(
+    resolvedPath: string,
+    allowedPaths: string[],
+  ): boolean {
+    const normalizedResolved = path.normalize(resolvedPath);
+    return allowedPaths.some((allowedPath) => {
+      const normalizedAllowed = path.normalize(allowedPath);
+      return normalizedResolved.startsWith(normalizedAllowed + path.sep);
+    });
+  }
+
+  /**
+   * Sanitizes a filename by removing path traversal characters.
+   * Only allows alphanumeric characters, underscores, hyphens, dots, and spaces.
+   */
+  private static sanitizeFilename(filename: string): string {
+    // Get only the basename to prevent any directory traversal
+    const basename = path.basename(filename);
+    // Additional sanitization: remove any remaining potentially dangerous characters
+    return basename.replace(/[^a-zA-Z0-9._\- ]/g, '_');
+  }
+
   static ensureOutputDirectory(): string {
     const outputPath = path.join(process.cwd(), this.OUTPUT_DIR);
 
@@ -30,19 +56,35 @@ export class FileHandler {
   }
 
   static findInputFile(filename: string): FileSearchResult {
-    if (path.isAbsolute(filename) && fs.existsSync(filename)) {
-      return {
-        found: true,
-        filePath: filename,
-        searchedPaths: [],
-      };
+    // Sanitize the filename to prevent path traversal
+    const sanitizedFilename = this.sanitizeFilename(filename);
+
+    // For absolute paths, verify the file exists and is within allowed directories
+    if (path.isAbsolute(filename)) {
+      const resolvedPath = path.resolve(filename);
+      // Check if the absolute path is within one of the allowed search paths
+      if (
+        this.isPathWithinAllowed(resolvedPath, this.SEARCH_PATHS) &&
+        fs.existsSync(resolvedPath)
+      ) {
+        return {
+          found: true,
+          filePath: resolvedPath,
+          searchedPaths: [],
+        };
+      }
+      // If absolute path is not within allowed paths, fall through to search
     }
 
     const searchPaths = this.SEARCH_PATHS;
 
     for (const searchPath of searchPaths) {
-      const fullPath = path.join(searchPath, filename);
-      if (fs.existsSync(fullPath)) {
+      const fullPath = path.resolve(path.join(searchPath, sanitizedFilename));
+      // Verify the resolved path stays within the search path (defense in depth)
+      if (
+        fullPath.startsWith(path.resolve(searchPath)) &&
+        fs.existsSync(fullPath)
+      ) {
         return {
           found: true,
           filePath: fullPath,
