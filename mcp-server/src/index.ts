@@ -12,6 +12,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { ImageGenerator } from './imageGenerator.js';
 import {
   ImageGenerationRequest,
@@ -24,6 +25,10 @@ class NanoBananaServer {
   private server: Server;
   private imageGenerator!: ImageGenerator;
   private initializationError: Error | null = null;
+
+  private formatJsonResponse(payload: unknown): string {
+    return JSON.stringify(payload, null, 2);
+  }
 
   constructor() {
     this.server = new Server(
@@ -442,12 +447,24 @@ class NanoBananaServer {
       };
     });
 
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      if (this.initializationError) {
-        throw this.initializationError;
-      }
-
+    this.server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest) => {
       const { name, arguments: args } = request.params;
+
+      if (this.initializationError) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: this.formatJsonResponse({
+                success: false,
+                tool: name,
+                message: 'Server initialization failed',
+                error: this.initializationError.message,
+              }),
+            },
+          ],
+        };
+      }
 
       try {
         let response;
@@ -590,19 +607,52 @@ class NanoBananaServer {
             content: [
               {
                 type: 'text',
-                text: `${response.message}\n\nGenerated files:\n${response.generatedFiles?.map((f) => `• ${f}`).join('\n') || 'None'}`, 
+                text: this.formatJsonResponse({
+                  success: true,
+                  tool: name,
+                  message: response.message,
+                  generatedFiles: response.generatedFiles ?? [],
+                }),
               },
             ],
           };
-        } else {
-          throw new Error(response.error || response.message);
         }
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: this.formatJsonResponse({
+                success: false,
+                tool: name,
+                message: response.message,
+                error: response.error || response.message,
+                generatedFiles: response.generatedFiles ?? [],
+              }),
+            },
+          ],
+        };
       } catch (error: unknown) {
         console.error(`Error executing tool ${name}:`, error);
-        if (error instanceof Error) {
-          throw error;
-        }
-        throw new Error(`An unexpected error occurred: ${String(error)}`);
+
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : `An unexpected error occurred: ${String(error)}`;
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: this.formatJsonResponse({
+                success: false,
+                tool: name,
+                message: 'Tool execution failed',
+                error: errorMessage,
+              }),
+            },
+          ],
+        };
       }
     });
   }
@@ -666,7 +716,7 @@ class NanoBananaServer {
   }
 
   private setupErrorHandling() {
-    this.server.onerror = (error) => {
+    this.server.onerror = (error: unknown) => {
       console.error('[MCP Error]', error);
     };
 
