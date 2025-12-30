@@ -184,7 +184,7 @@ gemini extensions install https://github.com/doggy8088/nanobanana
 **`--styles="style1,style2"`** - 以逗號分隔的藝術風格清單
 **`--variations="var1,var2"`** - 指定變化類型  
 **`--format=grid|separate`** - 輸出格式（預設：separate）
-**`--resolution=1K|2K|4K`** - 輸出解析度（預設：4K）
+**`--resolution=1K|2K|4K`** - 輸出解析度（預設：2K）
 **`--seed=123`** - 用於重現結果的隨機種子
 **`--filename="name"`** - 指定輸出檔名（多張自動加後綴）
 **`--preview`** - 自動使用預設檢視器開啟生成圖片

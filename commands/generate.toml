@@ -7,7 +7,7 @@ Valid options:
 - --styles="style1,style2" (photorealistic, watercolor, oil-painting, sketch, pixel-art, anime, vintage, modern, abstract, minimalist)
 - --variations="var1,var2" (lighting, angle, color-palette, composition, mood, season, time-of-day)
 - --format=grid|separate (default: separate)
-- --resolution=1K|2K|4K (default: 1K, note: 4K only works with gemini-3-pro-image-preview model)
+- --resolution=1K|2K|4K (default: 2K, note: 4K only works with gemini-3-pro-image-preview model)
 - --aspect-ratio=1:1|2:3|3:2|3:4|4:3|4:5|5:4|9:16|16:9|21:9 (default: 1:1)
 - --seed=123 (integer)
 - --filename="name" (optional output filename; suffixes will be added for multiple images)
