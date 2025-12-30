@@ -1,0 +1,78 @@
+name: Auto Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Get current version
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $VERSION"
+
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          if git rev-parse "v${{ steps.get_version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Bump version
+        if: steps.check_tag.outputs.exists == 'true'
+        run: |
+          npm version patch --no-git-tag-version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Set version variable
+        run: |
+          if [ "${{ steps.check_tag.outputs.exists }}" == "true" ]; then
+            FINAL_VERSION=$NEW_VERSION
+          else
+            FINAL_VERSION=${{ steps.get_version.outputs.version }}
+          fi
+          echo "FINAL_VERSION=$FINAL_VERSION" >> $GITHUB_ENV
+
+      - name: Update .gemini-extension-install.json
+        run: |
+          jq --arg tag "v${FINAL_VERSION}-4k" '.releaseTag = $tag' .gemini-extension-install.json > tmp.json && mv tmp.json .gemini-extension-install.json
+          cat .gemini-extension-install.json
+
+      - name: Commit version bump
+        if: steps.check_tag.outputs.exists == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add package.json .gemini-extension-install.json
+          git commit -m "chore: bump version to ${FINAL_VERSION}"
+          git push
+
+      - name: Create Release
+        uses: ncipollo/create-release@v1
+        with:
+          tag: v${{ env.FINAL_VERSION }}-4k
+          name: Release v${{ env.FINAL_VERSION }}-4k
+          generateReleaseNotes: true
+          draft: false
+          prerelease: false
