@@ -3,7 +3,8 @@ name: Auto Release
 on:
   push:
     branches:
-      - main
+      - 4k
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -20,7 +21,22 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.1.42'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install MCP server dependencies
+        run: cd mcp-server && npm ci
+
+      - name: Run build
+        run: npm run build
 
       - name: Get current version
         id: get_version
@@ -54,25 +70,33 @@ jobs:
           fi
           echo "FINAL_VERSION=$FINAL_VERSION" >> $GITHUB_ENV
 
+      - name: Update extension version
+        run: |
+          sed -i "s/\"version\": \".*\"/\"version\": \"${FINAL_VERSION}\"/" gemini-extension.json
+
       - name: Update .gemini-extension-install.json
         run: |
           jq --arg tag "v${FINAL_VERSION}-4k" '.releaseTag = $tag' .gemini-extension-install.json > tmp.json && mv tmp.json .gemini-extension-install.json
           cat .gemini-extension-install.json
+
+      - name: Create TAR archive
+        run: tar -cvzf ../nanobanana-release.tar.gz --exclude='.git' --exclude='.github' --exclude='./node_modules' . && mv ../nanobanana-release.tar.gz .
 
       - name: Commit version bump
         if: steps.check_tag.outputs.exists == 'true'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add package.json .gemini-extension-install.json
+          git add package.json gemini-extension.json .gemini-extension-install.json
           git commit -m "chore: bump version to ${FINAL_VERSION}"
           git push
 
       - name: Create Release
-        uses: ncipollo/create-release@v1
+        uses: ncipollo/release-action@v1
         with:
           tag: v${{ env.FINAL_VERSION }}-4k
           name: Release v${{ env.FINAL_VERSION }}-4k
           generateReleaseNotes: true
           draft: false
           prerelease: false
+          artifacts: nanobanana-release.tar.gz
