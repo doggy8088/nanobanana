@@ -1,4 +1,4 @@
-> [!NOTE]  
+> [!NOTE]
 > 此擴充套件（v1.0.10+）現在已支援 Nano Banana Pro（`gemini-3-pro-image-preview`）！
 >
 > 將 `NANOBANANA_MODEL` 環境變數設定為 `gemini-3-pro-image-preview` 即可使用。
@@ -182,7 +182,7 @@ gemini extensions install https://github.com/doggy8088/nanobanana
 
 **`--count=N`** - 變體數量（1-8，預設：1）
 **`--styles="style1,style2"`** - 以逗號分隔的藝術風格清單
-**`--variations="var1,var2"`** - 指定變化類型  
+**`--variations="var1,var2"`** - 指定變化類型
 **`--format=grid|separate`** - 輸出格式（預設：separate）
 **`--resolution=1K|2K|4K`** - 輸出解析度（預設：2K）
 **`--seed=123`** - 用於重現結果的隨機種子
@@ -429,6 +429,28 @@ cd mcp-server && npm start
 # 開發模式（TypeScript watch）
 cd mcp-server && npm run dev
 ```
+
+### 版本更新發佈
+
+要發佈新版本，請依照以下步驟進行：
+
+1. **自動更新版本號碼**
+
+   ```bash
+   npm run bump
+   ```
+
+   此指令會自動更新版本號碼並產生變更記錄。
+
+2. **提交並推送變更**
+
+   ```bash
+   git add .
+   git commit -m "chore: bump version"
+   git push
+   ```
+
+   推送到儲存庫後，CI/CD pipeline 會自動執行並發佈新版本。
 
 ## 🔧 技術細節
 
