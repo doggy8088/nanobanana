@@ -120,6 +120,14 @@ class NanoBananaServer {
                     'Output image resolution (default: 4K)',
                   default: '4K',
                 },
+                parallel: {
+                  type: 'number',
+                  description:
+                    'Number of images to generate in parallel (1-8, default: 1)',
+                  minimum: 1,
+                  maximum: 8,
+                  default: 1,
+                },
               },
               required: ['prompt'],
             },
@@ -485,6 +493,7 @@ class NanoBananaServer {
                 (args?.noPreview as boolean) ||
                 (args?.['no-preview'] as boolean),
               resolution: (args?.resolution as '1K' | '2K' | '4K') || '4K',
+              parallel: (args?.parallel as number) || 1,
             };
             response =
               await this.imageGenerator.generateTextToImage(imageRequest);

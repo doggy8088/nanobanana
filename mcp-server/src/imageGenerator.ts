@@ -85,18 +85,18 @@ export class ImageGenerator {
     // gemini-2.5-flash-image: only supports aspectRatio
     // gemini-3-pro-image-preview: supports aspectRatio and imageSize (1K/2K/4K)
     const isGemini3 = this.modelName.includes('gemini-3');
-    
+
     interface ImageConfig {
       aspectRatio?: string;
       imageSize?: string;
     }
-    
+
     const imageConfig: ImageConfig = {};
-    
+
     if (aspectRatio) {
       imageConfig.aspectRatio = aspectRatio;
     }
-    
+
     // Only add imageSize for Gemini 3 models
     if (isGemini3 && resolution) {
       imageConfig.imageSize = resolution;
@@ -354,6 +354,83 @@ export class ImageGenerator {
     return prompts.length > 0 ? prompts : [basePrompt];
   }
 
+  private async generateSingleImage(
+    currentPrompt: string,
+    index: number,
+    request: ImageGenerationRequest,
+    outputPath: string,
+    forceSuffix: boolean,
+  ): Promise<{ success: boolean; filePath?: string; error?: string }> {
+    console.error(
+      `DEBUG - Generating variation ${index + 1}:`,
+      currentPrompt,
+    );
+
+    try {
+      // Use REST API
+      const resolution = request.resolution || ImageGenerator.DEFAULT_RESOLUTION;
+      const response = await this.callGeminiRestApi(
+        currentPrompt,
+        resolution,
+        request.aspectRatio,
+      );
+
+      console.error('DEBUG - API Response structure for variation', index + 1);
+
+      if (response.candidates && response.candidates[0]?.content?.parts) {
+        // Process image parts in the response
+        for (const part of response.candidates[0].content.parts) {
+          let imageBase64: string | undefined;
+
+          if (part.inlineData?.data) {
+            imageBase64 = part.inlineData.data;
+            console.error('DEBUG - Found image data in inlineData:', {
+              length: imageBase64.length,
+              mimeType: part.inlineData.mimeType,
+            });
+          } else if (part.text && this.isValidBase64ImageData(part.text)) {
+            imageBase64 = part.text;
+            console.error(
+              'DEBUG - Found image data in text field (fallback)',
+            );
+          }
+
+          if (imageBase64) {
+            const filenameSuffix =
+              request.filename && request.filenameSuffixes?.[index] !== undefined
+                ? request.filenameSuffixes[index]
+                : undefined;
+            const filename = FileHandler.generateFilename(
+              request.styles || request.variations
+                ? currentPrompt
+                : request.prompt,
+              request.fileFormat,
+              index,
+              request.filename,
+              forceSuffix,
+              filenameSuffix,
+            );
+            const fullPath = await FileHandler.saveImageFromBase64(
+              imageBase64,
+              outputPath,
+              filename,
+            );
+            console.error('DEBUG - Image saved to:', fullPath);
+            return { success: true, filePath: fullPath };
+          }
+        }
+      }
+      return { success: false, error: 'No image data found in API response' };
+    } catch (error: unknown) {
+      const errorMessage = this.handleApiError(error);
+      console.error(
+        `DEBUG - Error generating variation ${index + 1}:`,
+        errorMessage,
+      );
+      return { success: false, error: errorMessage };
+    }
+  }
+
   async generateTextToImage(
     request: ImageGenerationRequest,
   ): Promise<ImageGenerationResponse> {
@@ -364,87 +441,47 @@ export class ImageGenerator {
       const forceSuffix = Boolean(request.filename) && prompts.length > 1;
       let firstError: string | null = null;
 
-      console.error(`DEBUG - Generating ${prompts.length} image variation(s)`);
+      // Determine parallel count (default to 1 if not specified)
+      const parallelCount = Math.min(
+        Math.max(1, request.parallel || 1),
+        8,
+      );
 
-      for (let i = 0; i < prompts.length; i++) {
-        const currentPrompt = prompts[i];
-        console.error(
-          `DEBUG - Generating variation ${i + 1}/${prompts.length}:`,
-          currentPrompt,
+      console.error(
+        `DEBUG - Generating ${prompts.length} image variation(s) with parallelism of ${parallelCount}`,
+      );
+
+      // Process prompts in batches based on parallelCount
+      for (let i = 0; i < prompts.length; i += parallelCount) {
+        const batch = prompts.slice(i, i + parallelCount);
+        const batchPromises = batch.map((prompt, batchIndex) =>
+          this.generateSingleImage(
+            prompt,
+            i + batchIndex,
+            request,
+            outputPath,
+            forceSuffix,
+          ),
         );
 
-        try {
-          // Use REST API
-          const resolution = request.resolution || ImageGenerator.DEFAULT_RESOLUTION;
-          const response = await this.callGeminiRestApi(
-            currentPrompt,
-            resolution,
-            request.aspectRatio,
-          );
+        const results = await Promise.all(batchPromises);
 
-          console.error('DEBUG - API Response structure for variation', i + 1);
-
-          if (response.candidates && response.candidates[0]?.content?.parts) {
-            // Process image parts in the response
-            for (const part of response.candidates[0].content.parts) {
-              let imageBase64: string | undefined;
-
-              if (part.inlineData?.data) {
-                imageBase64 = part.inlineData.data;
-                console.error('DEBUG - Found image data in inlineData:', {
-                  length: imageBase64.length,
-                  mimeType: part.inlineData.mimeType,
-                });
-              } else if (part.text && this.isValidBase64ImageData(part.text)) {
-                imageBase64 = part.text;
-                console.error(
-                  'DEBUG - Found image data in text field (fallback)',
-                );
-              }
-
-              if (imageBase64) {
-                const filenameSuffix =
-                  request.filename && request.filenameSuffixes?.[i] !== undefined
-                    ? request.filenameSuffixes[i]
-                    : undefined;
-                const filename = FileHandler.generateFilename(
-                  request.styles || request.variations
-                    ? currentPrompt
-                    : request.prompt,
-                  request.fileFormat,
-                  i,
-                  request.filename,
-                  forceSuffix,
-                  filenameSuffix,
-                );
-                const fullPath = await FileHandler.saveImageFromBase64(
-                  imageBase64,
-                  outputPath,
-                  filename,
-                );
-                generatedFiles.push(fullPath);
-                console.error('DEBUG - Image saved to:', fullPath);
-                break; // Only process first valid image per variation
-              }
+        // Process results
+        for (const result of results) {
+          if (result.success && result.filePath) {
+            generatedFiles.push(result.filePath);
+          } else if (result.error) {
+            if (!firstError) {
+              firstError = result.error;
             }
-          }
-        } catch (error: unknown) {
-          const errorMessage = this.handleApiError(error);
-          if (!firstError) {
-            firstError = errorMessage;
-          }
-          console.error(
-            `DEBUG - Error generating variation ${i + 1}:`,
-            errorMessage,
-          );
-
-          // If auth-related, stop immediately
-          if (errorMessage.toLowerCase().includes('authentication failed')) {
-            return {
-              success: false,
-              message: 'Image generation failed',
-              error: errorMessage,
-            };
+            // If auth-related, stop immediately
+            if (result.error.toLowerCase().includes('authentication failed')) {
+              return {
+                success: false,
+                message: 'Image generation failed',
+                error: result.error,
+              };
+            }
           }
         }
       }
@@ -534,14 +571,14 @@ export class ImageGenerator {
         const transition = args?.transition || 'smooth';
         const forceSuffix = Boolean(request.filename) && steps > 1;
         let firstError: string | null = null;
-  
+
         console.error(`DEBUG - Generating ${steps}-step ${type} sequence`);
-  
+
         // Generate each step of the story/process
         for (let i = 0; i < steps; i++) {
           const stepNumber = i + 1;
           let stepPrompt = `${request.prompt}, step ${stepNumber} of ${steps}`;
-  
+
           // Add context based on type
           switch (type) {
             case 'story':
@@ -557,14 +594,14 @@ export class ImageGenerator {
               stepPrompt += `, chronological progression, timeline visualization`;
               break;
           }
-  
+
           // Add transition context
           if (i > 0) {
             stepPrompt += `, ${transition} transition from previous step`;
           }
-  
+
           console.error(`DEBUG - Generating step ${stepNumber}: ${stepPrompt}`);
-  
+
           try {
             // Use REST API
             const resolution = request.resolution || ImageGenerator.DEFAULT_RESOLUTION;
@@ -573,17 +610,17 @@ export class ImageGenerator {
               resolution,
               request.aspectRatio,
             );
-  
+
             if (response.candidates && response.candidates[0]?.content?.parts) {
               for (const part of response.candidates[0].content.parts) {
                 let imageBase64: string | undefined;
-  
+
                 if (part.inlineData?.data) {
                   imageBase64 = part.inlineData.data;
                 } else if (part.text && this.isValidBase64ImageData(part.text)) {
                   imageBase64 = part.text;
                 }
-  
+
                 if (imageBase64) {
                   const filenameIndex = request.filename ? i : 0;
                   const filename = FileHandler.generateFilename(
@@ -621,7 +658,7 @@ export class ImageGenerator {
               };
             }
           }
-  
+
           // Check if this step was actually generated
           if (generatedFiles.length < stepNumber) {
             console.error(
@@ -629,11 +666,11 @@ export class ImageGenerator {
             );
           }
         }
-  
+
         console.error(
           `DEBUG - Story generation completed. Generated ${generatedFiles.length} out of ${steps} requested images`,
         );
-  
+
         if (generatedFiles.length === 0) {
           return {
             success: false,
@@ -641,15 +678,15 @@ export class ImageGenerator {
             error: firstError || 'No image data found in API responses',
           };
         }
-  
+
         // Handle preview if requested
         await this.handlePreview(generatedFiles, request);
-  
+
         const wasFullySuccessful = generatedFiles.length === steps;
         const successMessage = wasFullySuccessful
           ? `Successfully generated complete ${steps}-step ${type} sequence`
           : `Generated ${generatedFiles.length} out of ${steps} requested ${type} steps (${steps - generatedFiles.length} steps failed)`;
-  
+
         return {
           success: true,
           message: successMessage,
