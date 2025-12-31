@@ -46,7 +46,7 @@ export class Logger {
     const currentFilePath = fileURLToPath(currentFileUrl);
     const srcDir = path.dirname(currentFilePath);
     const mcpServerDir = path.dirname(srcDir);
-    
+
     this.logsDir = path.join(mcpServerDir, 'logs');
     return this.logsDir;
   }
@@ -79,7 +79,7 @@ export class Logger {
     try {
       const logFilePath = this.getLogFilePath();
       const logLine = JSON.stringify(entry) + '\n';
-      
+
       fs.appendFileSync(logFilePath, logLine, 'utf8');
       console.error(`DEBUG - Log written to: ${logFilePath}`);
     } catch (error) {
@@ -124,7 +124,7 @@ export class Logger {
    */
   private static sanitizeRequest(request: Record<string, unknown>): Record<string, unknown> {
     const sanitized: Record<string, unknown> = {};
-    
+
     for (const [key, value] of Object.entries(request)) {
       // Skip large base64 data, just record that it exists
       if (key === 'inputImage' && typeof value === 'string' && value.length > 1000) {
@@ -133,7 +133,7 @@ export class Logger {
         sanitized[key] = value;
       }
     }
-    
+
     return sanitized;
   }
 }
