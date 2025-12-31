@@ -5,6 +5,7 @@
  */
 
 import { FileHandler } from './fileHandler.js';
+import { Logger } from './logger.js';
 import {
   ImageGenerationRequest,
   ImageGenerationResponse,
@@ -13,6 +14,7 @@ import {
   ImageResolution,
 } from './types.js';
 import { exec } from 'child_process';
+import * as fs from 'fs';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
@@ -366,9 +368,21 @@ export class ImageGenerator {
       currentPrompt,
     );
 
+    // Prepare API call info for logging
+    const resolution = request.resolution || ImageGenerator.DEFAULT_RESOLUTION;
+    const isGemini3 = this.modelName.includes('gemini-3');
+    const generationConfig: Record<string, unknown> = {
+      responseModalities: ['Image'],
+    };
+    if (request.aspectRatio || (isGemini3 && resolution)) {
+      const imageConfig: Record<string, unknown> = {};
+      if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
+      if (isGemini3 && resolution) imageConfig.imageSize = resolution;
+      generationConfig.imageConfig = imageConfig;
+    }
+
     try {
       // Use REST API
-      const resolution = request.resolution || ImageGenerator.DEFAULT_RESOLUTION;
       const response = await this.callGeminiRestApi(
         currentPrompt,
         resolution,
@@ -416,10 +430,52 @@ export class ImageGenerator {
               filename,
             );
             console.error('DEBUG - Image saved to:', fullPath);
+
+            // Calculate image file size and log
+            const fileStats = fs.statSync(fullPath);
+            const logEntry = Logger.createLogEntry(
+              'generate',
+              request as unknown as Record<string, unknown>,
+              {
+                model: this.modelName,
+                prompt: currentPrompt,
+                resolution,
+                aspectRatio: request.aspectRatio,
+                hasInputImage: false,
+                generationConfig,
+              },
+              {
+                success: true,
+                imageSize: fileStats.size,
+                filePath: fullPath,
+              },
+            );
+            Logger.log(logEntry);
+
             return { success: true, filePath: fullPath };
           }
         }
       }
+
+      // Log failure case
+      const logEntry = Logger.createLogEntry(
+        'generate',
+        request as unknown as Record<string, unknown>,
+        {
+          model: this.modelName,
+          prompt: currentPrompt,
+          resolution,
+          aspectRatio: request.aspectRatio,
+          hasInputImage: false,
+          generationConfig,
+        },
+        {
+          success: false,
+          error: 'No image data found in API response',
+        },
+      );
+      Logger.log(logEntry);
+
       return { success: false, error: 'No image data found in API response' };
     } catch (error: unknown) {
       const errorMessage = this.handleApiError(error);
@@ -427,6 +483,26 @@ export class ImageGenerator {
         `DEBUG - Error generating variation ${index + 1}:`,
         errorMessage,
       );
+
+      // Log error case
+      const logEntry = Logger.createLogEntry(
+        'generate',
+        request as unknown as Record<string, unknown>,
+        {
+          model: this.modelName,
+          prompt: currentPrompt,
+          resolution,
+          aspectRatio: request.aspectRatio,
+          hasInputImage: false,
+          generationConfig,
+        },
+        {
+          success: false,
+          error: errorMessage,
+        },
+      );
+      Logger.log(logEntry);
+
       return { success: false, error: errorMessage };
     }
   }
@@ -602,9 +678,11 @@ export class ImageGenerator {
 
           console.error(`DEBUG - Generating step ${stepNumber}: ${stepPrompt}`);
 
+          // Define resolution outside try block so it's accessible in catch
+          const resolution = request.resolution || ImageGenerator.DEFAULT_RESOLUTION;
+
           try {
             // Use REST API
-            const resolution = request.resolution || ImageGenerator.DEFAULT_RESOLUTION;
             const response = await this.callGeminiRestApi(
               stepPrompt,
               resolution,
@@ -637,6 +715,38 @@ export class ImageGenerator {
                   );
                   generatedFiles.push(fullPath);
                   console.error(`DEBUG - Step ${stepNumber} saved to:`, fullPath);
+
+                  // Calculate image file size and log
+                  const fileStats = fs.statSync(fullPath);
+                  const storyGenerationConfig: Record<string, unknown> = {
+                    responseModalities: ['Image'],
+                  };
+                  const isGemini3Story = this.modelName.includes('gemini-3');
+                  if (request.aspectRatio || (isGemini3Story && resolution)) {
+                    const imageConfig: Record<string, unknown> = {};
+                    if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
+                    if (isGemini3Story && resolution) imageConfig.imageSize = resolution;
+                    storyGenerationConfig.imageConfig = imageConfig;
+                  }
+                  const logEntry = Logger.createLogEntry(
+                    'story',
+                    request as unknown as Record<string, unknown>,
+                    {
+                      model: this.modelName,
+                      prompt: stepPrompt,
+                      resolution,
+                      aspectRatio: request.aspectRatio,
+                      hasInputImage: false,
+                      generationConfig: storyGenerationConfig,
+                    },
+                    {
+                      success: true,
+                      imageSize: fileStats.size,
+                      filePath: fullPath,
+                    },
+                  );
+                  Logger.log(logEntry);
+
                   break;
                 }
               }
@@ -650,6 +760,36 @@ export class ImageGenerator {
               `DEBUG - Error generating step ${stepNumber}:`,
               errorMessage,
             );
+
+            // Log error case
+            const storyErrorConfig: Record<string, unknown> = {
+              responseModalities: ['Image'],
+            };
+            const isGemini3StoryErr = this.modelName.includes('gemini-3');
+            if (request.aspectRatio || (isGemini3StoryErr && resolution)) {
+              const imageConfig: Record<string, unknown> = {};
+              if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
+              if (isGemini3StoryErr && resolution) imageConfig.imageSize = resolution;
+              storyErrorConfig.imageConfig = imageConfig;
+            }
+            const logEntry = Logger.createLogEntry(
+              'story',
+              request as unknown as Record<string, unknown>,
+              {
+                model: this.modelName,
+                prompt: stepPrompt,
+                resolution,
+                aspectRatio: request.aspectRatio,
+                hasInputImage: false,
+                generationConfig: storyErrorConfig,
+              },
+              {
+                success: false,
+                error: errorMessage,
+              },
+            );
+            Logger.log(logEntry);
+
             if (errorMessage.toLowerCase().includes('authentication failed')) {
               return {
                 success: false,
@@ -777,6 +917,38 @@ export class ImageGenerator {
             );
             generatedFiles.push(fullPath);
             console.error('DEBUG - Edited image saved to:', fullPath);
+
+            // Calculate image file size and log
+            const fileStats = fs.statSync(fullPath);
+            const editGenerationConfig: Record<string, unknown> = {
+              responseModalities: ['Image'],
+            };
+            const isGemini3Edit = this.modelName.includes('gemini-3');
+            if (request.aspectRatio || (isGemini3Edit && resolution)) {
+              const imageConfig: Record<string, unknown> = {};
+              if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
+              if (isGemini3Edit && resolution) imageConfig.imageSize = resolution;
+              editGenerationConfig.imageConfig = imageConfig;
+            }
+            const logEntry = Logger.createLogEntry(
+              request.mode as 'edit' | 'restore',
+              request as unknown as Record<string, unknown>,
+              {
+                model: this.modelName,
+                prompt: request.prompt,
+                resolution,
+                aspectRatio: request.aspectRatio,
+                hasInputImage: true,
+                generationConfig: editGenerationConfig,
+              },
+              {
+                success: true,
+                imageSize: fileStats.size,
+                filePath: fullPath,
+              },
+            );
+            Logger.log(logEntry);
+
             imageFound = true;
             break; // Only process the first valid image
           }
@@ -805,6 +977,37 @@ export class ImageGenerator {
       };
     } catch (error: unknown) {
       console.error(`DEBUG - Error in ${request.mode}Image:`, error);
+
+      // Log error case
+      const editResolution = request.resolution || ImageGenerator.DEFAULT_RESOLUTION;
+      const editErrorConfig: Record<string, unknown> = {
+        responseModalities: ['Image'],
+      };
+      const isGemini3EditErr = this.modelName.includes('gemini-3');
+      if (request.aspectRatio || (isGemini3EditErr && editResolution)) {
+        const imageConfig: Record<string, unknown> = {};
+        if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
+        if (isGemini3EditErr && editResolution) imageConfig.imageSize = editResolution;
+        editErrorConfig.imageConfig = imageConfig;
+      }
+      const logEntry = Logger.createLogEntry(
+        request.mode as 'edit' | 'restore',
+        request as unknown as Record<string, unknown>,
+        {
+          model: this.modelName,
+          prompt: request.prompt,
+          resolution: editResolution,
+          aspectRatio: request.aspectRatio,
+          hasInputImage: Boolean(request.inputImage),
+          generationConfig: editErrorConfig,
+        },
+        {
+          success: false,
+          error: this.handleApiError(error),
+        },
+      );
+      Logger.log(logEntry);
+
       return {
         success: false,
         message: `Failed to ${request.mode} image`,
