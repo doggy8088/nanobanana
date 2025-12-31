@@ -21,6 +21,15 @@ import {
   DiagramPromptArgs,
 } from './types.js';
 
+/**
+ * Debug logging - only outputs if NANOBANANA_DEBUG environment variable is set
+ */
+function debug(...args: unknown[]): void {
+  if (process.env.NANOBANANA_DEBUG) {
+    console.error(...args);
+  }
+}
+
 class NanoBananaServer {
   private server: Server;
   private imageGenerator!: ImageGenerator;
@@ -642,7 +651,7 @@ class NanoBananaServer {
           ],
         };
       } catch (error: unknown) {
-        console.error(`Error executing tool ${name}:`, error);
+        debug(`Error executing tool ${name}:`, error);
 
         const errorMessage =
           error instanceof Error
@@ -726,7 +735,7 @@ class NanoBananaServer {
 
   private setupErrorHandling() {
     this.server.onerror = (error: unknown) => {
-      console.error('[MCP Error]', error);
+      debug('[MCP Error]', error);
     };
 
     process.on('SIGINT', async () => {
@@ -738,12 +747,12 @@ class NanoBananaServer {
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('Nano Banana MCP server running on stdio');
+    debug('Nano Banana MCP server running on stdio');
   }
 }
 
 const server = new NanoBananaServer();
 server.run().catch((error) => {
-  console.error('Failed to start server:', error);
+  debug('Failed to start server:', error);
   process.exit(1);
 });

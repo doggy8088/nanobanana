@@ -416,7 +416,7 @@ export class ImageGenerator {
         request.seed,
       );
 
-      console.error('DEBUG - API Response structure for variation', index + 1);
+      this.debug('DEBUG - API Response structure for variation', index + 1);
 
       if (response.candidates && response.candidates[0]?.content?.parts) {
         // Process image parts in the response
@@ -918,7 +918,7 @@ export class ImageGenerator {
         request.seed,
       );
 
-      console.error('DEBUG - Edit API Response received');
+      this.debug('DEBUG - Edit API Response received');
 
       if (response.candidates && response.candidates[0]?.content?.parts) {
         const generatedFiles: string[] = [];

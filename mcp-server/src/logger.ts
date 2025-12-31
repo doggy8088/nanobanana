@@ -34,6 +34,15 @@ export class Logger {
   private static logsDir: string | null = null;
 
   /**
+   * Debug logging - only outputs if NANOBANANA_DEBUG environment variable is set
+   */
+  private static debug(...args: unknown[]): void {
+    if (process.env.NANOBANANA_DEBUG) {
+      console.error(...args);
+    }
+  }
+
+  /**
    * Get the logs directory path (mcp-server/logs/)
    */
   private static getLogsDirectory(): string {
@@ -58,7 +67,7 @@ export class Logger {
     const logsDir = this.getLogsDirectory();
     if (!fs.existsSync(logsDir)) {
       fs.mkdirSync(logsDir, { recursive: true });
-      console.error(`DEBUG - Created logs directory: ${logsDir}`);
+      this.debug(`DEBUG - Created logs directory: ${logsDir}`);
     }
     return logsDir;
   }
@@ -81,9 +90,9 @@ export class Logger {
       const logLine = JSON.stringify(entry) + '\n';
 
       fs.appendFileSync(logFilePath, logLine, 'utf8');
-      console.error(`DEBUG - Log written to: ${logFilePath}`);
+      this.debug(`DEBUG - Log written to: ${logFilePath}`);
     } catch (error) {
-      console.error('DEBUG - Failed to write log:', error instanceof Error ? error.message : String(error));
+      this.debug('DEBUG - Failed to write log:', error instanceof Error ? error.message : String(error));
     }
   }
 
