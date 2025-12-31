@@ -66,6 +66,7 @@ export class ImageGenerator {
     aspectRatio?: string,
     inputImageBase64?: string,
     inputImageMimeType?: string,
+    seed?: number,
   ): Promise<GeminiResponse> {
     const url = `${ImageGenerator.API_BASE_URL}/${this.modelName}:generateContent?key=${this.apiKey}`;
 
@@ -114,6 +115,7 @@ export class ImageGenerator {
       generationConfig: {
         responseModalities: ['Image'],
         ...(Object.keys(imageConfig).length > 0 ? { imageConfig } : {}),
+        ...(seed !== undefined ? { seed } : {}),
       },
     };
 
@@ -380,6 +382,9 @@ export class ImageGenerator {
       if (isGemini3 && resolution) imageConfig.imageSize = resolution;
       generationConfig.imageConfig = imageConfig;
     }
+    if (request.seed !== undefined) {
+      generationConfig.seed = request.seed;
+    }
 
     try {
       // Use REST API
@@ -387,6 +392,9 @@ export class ImageGenerator {
         currentPrompt,
         resolution,
         request.aspectRatio,
+        undefined,
+        undefined,
+        request.seed,
       );
 
       console.error('DEBUG - API Response structure for variation', index + 1);
@@ -687,6 +695,9 @@ export class ImageGenerator {
               stepPrompt,
               resolution,
               request.aspectRatio,
+              undefined,
+              undefined,
+              request.seed,
             );
 
             if (response.candidates && response.candidates[0]?.content?.parts) {
@@ -727,6 +738,9 @@ export class ImageGenerator {
                     if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
                     if (isGemini3Story && resolution) imageConfig.imageSize = resolution;
                     storyGenerationConfig.imageConfig = imageConfig;
+                  }
+                  if (request.seed !== undefined) {
+                    storyGenerationConfig.seed = request.seed;
                   }
                   const logEntry = Logger.createLogEntry(
                     'story',
@@ -771,6 +785,9 @@ export class ImageGenerator {
               if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
               if (isGemini3StoryErr && resolution) imageConfig.imageSize = resolution;
               storyErrorConfig.imageConfig = imageConfig;
+            }
+            if (request.seed !== undefined) {
+              storyErrorConfig.seed = request.seed;
             }
             const logEntry = Logger.createLogEntry(
               'story',
@@ -879,6 +896,7 @@ export class ImageGenerator {
         request.aspectRatio,
         imageBase64,
         mimeType,
+        request.seed,
       );
 
       console.error('DEBUG - Edit API Response received');
@@ -929,6 +947,9 @@ export class ImageGenerator {
               if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
               if (isGemini3Edit && resolution) imageConfig.imageSize = resolution;
               editGenerationConfig.imageConfig = imageConfig;
+            }
+            if (request.seed !== undefined) {
+              editGenerationConfig.seed = request.seed;
             }
             const logEntry = Logger.createLogEntry(
               request.mode as 'edit' | 'restore',
@@ -989,6 +1010,9 @@ export class ImageGenerator {
         if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
         if (isGemini3EditErr && editResolution) imageConfig.imageSize = editResolution;
         editErrorConfig.imageConfig = imageConfig;
+      }
+      if (request.seed !== undefined) {
+        editErrorConfig.seed = request.seed;
       }
       const logEntry = Logger.createLogEntry(
         request.mode as 'edit' | 'restore',
