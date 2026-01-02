@@ -76,6 +76,7 @@ export class ImageGenerator {
     inputImageBase64?: string,
     inputImageMimeType?: string,
     seed?: number,
+    referenceImagesData?: Array<{ data: string; mimeType: string }>,
   ): Promise<GeminiResponse> {
     const url = `${ImageGenerator.API_BASE_URL}/${this.modelName}:generateContent?key=${this.apiKey}`;
 
@@ -91,6 +92,18 @@ export class ImageGenerator {
           data: inputImageBase64,
         },
       });
+    }
+
+    // Add reference images if provided (for generation)
+    if (referenceImagesData && referenceImagesData.length > 0) {
+      for (const refImage of referenceImagesData) {
+        parts.push({
+          inlineData: {
+            mimeType: refImage.mimeType,
+            data: refImage.data,
+          },
+        });
+      }
     }
 
     // Build generationConfig based on model
@@ -383,6 +396,7 @@ export class ImageGenerator {
     request: ImageGenerationRequest,
     outputPath: string,
     forceSuffix: boolean,
+    referenceImagesData?: Array<{ data: string; mimeType: string }>,
   ): Promise<{ success: boolean; filePath?: string; error?: string }> {
     this.debug(
       `DEBUG - Generating variation ${index + 1}:`,
@@ -414,6 +428,7 @@ export class ImageGenerator {
         undefined,
         undefined,
         request.seed,
+        referenceImagesData,
       );
 
       this.debug('DEBUG - API Response structure for variation', index + 1);
@@ -544,6 +559,49 @@ export class ImageGenerator {
       const forceSuffix = Boolean(request.filename) && prompts.length > 1;
       let firstError: string | null = null;
 
+      // Process reference images if provided
+      let referenceImagesData: Array<{ data: string; mimeType: string }> | undefined;
+      if (request.referenceImages && request.referenceImages.length > 0) {
+        if (request.referenceImages.length > 14) {
+          return {
+            success: false,
+            message: 'Too many reference images provided',
+            error: `Maximum 14 reference images allowed, but ${request.referenceImages.length} were provided`,
+          };
+        }
+
+        this.debug(
+          `DEBUG - Processing ${request.referenceImages.length} reference image(s)`,
+        );
+
+        referenceImagesData = [];
+        for (const refImagePath of request.referenceImages) {
+          const fileResult = FileHandler.findInputFile(refImagePath);
+          if (!fileResult.found) {
+            return {
+              success: false,
+              message: `Reference image not found: ${refImagePath}`,
+              error: `Searched in: ${fileResult.searchedPaths.join(', ')}`,
+            };
+          }
+
+          const imageBase64 = await FileHandler.readImageAsBase64(
+            fileResult.filePath!,
+          );
+          const ext = fileResult.filePath!.toLowerCase().split('.').pop();
+          const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
+
+          referenceImagesData.push({
+            data: imageBase64,
+            mimeType,
+          });
+        }
+
+        this.debug(
+          `DEBUG - Successfully loaded ${referenceImagesData.length} reference image(s)`,
+        );
+      }
+
       // Determine parallel count (default to 1 if not specified)
       const parallelCount = Math.min(
         Math.max(1, request.parallel || 1),
@@ -564,6 +622,7 @@ export class ImageGenerator {
             request,
             outputPath,
             forceSuffix,
+            referenceImagesData,
           ),
         );
 

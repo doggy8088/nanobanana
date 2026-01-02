@@ -80,6 +80,14 @@ class NanoBananaServer {
                   description:
                     'The text prompt describing the image to generate',
                 },
+                files: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description:
+                    'Optional array of reference image file paths (1-14 images)',
+                  minItems: 1,
+                  maxItems: 14,
+                },
                 filename: {
                   type: 'string',
                   description:
@@ -490,6 +498,7 @@ class NanoBananaServer {
           case 'generate_image': {
             const imageRequest: ImageGenerationRequest = {
               prompt: args?.prompt as string,
+              referenceImages: args?.files as string[],
               outputCount: (args?.outputCount as number) || 1,
               mode: 'generate',
               styles: args?.styles as string[],

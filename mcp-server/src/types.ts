@@ -10,6 +10,7 @@ export type AspectRatio = '1:1' | '2:3' | '3:2' | '3:4' | '4:3' | '4:5' | '5:4' 
 export interface ImageGenerationRequest {
   prompt: string;
   inputImage?: string;
+  referenceImages?: string[];
   outputCount?: number;
   mode: 'generate' | 'edit' | 'restore';
   // Batch generation options
