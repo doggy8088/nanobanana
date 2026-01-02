@@ -22,6 +22,7 @@ Valid options:
 - --annotations="minimal|detailed" (default: detailed)
 - --resolution=1K|2K|4K (default: 4K, note: 4K only works with gemini-3-pro-image-preview model)
 - --filename="name" (optional output filename)
+- --parallel=N (1-8, default: 2)
 - --preview (flag)
 
 User input: {{args}}
@@ -34,7 +35,7 @@ Parse this input and:
 5. If valid, call the generate_diagram tool with the parsed parameters
 
 If you find invalid options, respond with:
-"Error: Invalid option(s) found: [list invalid options]. Valid options are: --files (1-14 comma-separated image file paths - can be absolute paths or relative filenames that will be searched in: current directory, ./images/, ./input/, ./nanobanana-output/, ~/Downloads/, ~/Desktop/), --type (flowchart, architecture, network, database, wireframe, mindmap, sequence), --style (professional, clean, hand-drawn, technical), --layout (horizontal, vertical, hierarchical, circular), --complexity (simple, detailed, comprehensive), --colors (mono, accent, categorical), --annotations (minimal, detailed), --resolution (1K, 2K, or 4K - note: 4K only works with gemini-3-pro-image-preview model), --filename (string), --preview (flag)"
+"Error: Invalid option(s) found: [list invalid options]. Valid options are: --files (1-14 comma-separated image file paths - can be absolute paths or relative filenames that will be searched in: current directory, ./images/, ./input/, ./nanobanana-output/, ~/Downloads/, ~/Desktop/), --type (flowchart, architecture, network, database, wireframe, mindmap, sequence), --style (professional, clean, hand-drawn, technical), --layout (horizontal, vertical, hierarchical, circular), --complexity (simple, detailed, comprehensive), --colors (mono, accent, categorical), --annotations (minimal, detailed), --resolution (1K, 2K, or 4K - note: 4K only works with gemini-3-pro-image-preview model), --filename (string), --parallel (1-8, default: 2), --preview (flag)"
 
 Otherwise, call generate_diagram with the validated parameters.
 """

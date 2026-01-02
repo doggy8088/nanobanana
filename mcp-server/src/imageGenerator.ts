@@ -48,6 +48,7 @@ export class ImageGenerator {
   private modelName: string;
   private static readonly DEFAULT_MODEL = 'gemini-2.5-flash-image';
   private static readonly DEFAULT_RESOLUTION: ImageResolution = '1K';
+  private static readonly DEFAULT_PARALLEL = 2;
   private static readonly API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
   constructor(authConfig: AuthConfig) {
@@ -602,9 +603,11 @@ export class ImageGenerator {
         );
       }
 
-      // Determine parallel count (default to 1 if not specified)
+      // Determine parallel count (default to 2 if not specified)
+      const requestedParallel =
+        request.parallel ?? ImageGenerator.DEFAULT_PARALLEL;
       const parallelCount = Math.min(
-        Math.max(1, request.parallel || 1),
+        Math.max(1, requestedParallel),
         8,
       );
 
@@ -720,266 +723,315 @@ export class ImageGenerator {
     return `An unexpected error occurred: ${errorMessage}`;
   }
 
-    async generateStorySequence(
-      request: ImageGenerationRequest,
-      args?: StorySequenceArgs,
-    ): Promise<ImageGenerationResponse> {
-      try {
-        const outputPath = FileHandler.ensureOutputDirectory();
-        const generatedFiles: string[] = [];
-        const steps = request.outputCount || 4;
-        const type = args?.type || 'story';
-        const style = args?.style || 'consistent';
-        const transition = args?.transition || 'smooth';
-        const forceSuffix = Boolean(request.filename) && steps > 1;
-        let firstError: string | null = null;
+  async generateStorySequence(
+    request: ImageGenerationRequest,
+    args?: StorySequenceArgs,
+  ): Promise<ImageGenerationResponse> {
+    try {
+      const outputPath = FileHandler.ensureOutputDirectory();
+      const steps = request.outputCount || 4;
+      const type = args?.type || 'story';
+      const style = args?.style || 'consistent';
+      const transition = args?.transition || 'smooth';
+      const forceSuffix = Boolean(request.filename) && steps > 1;
+      const resolution = request.resolution || ImageGenerator.DEFAULT_RESOLUTION;
+      const requestedParallel =
+        request.parallel ?? ImageGenerator.DEFAULT_PARALLEL;
+      const parallelCount = Math.min(Math.max(1, requestedParallel), 8);
+      const generatedFiles: Array<string | null> = Array(steps).fill(null);
+      let firstError: string | null = null;
 
-        this.debug(`DEBUG - Generating ${steps}-step ${type} sequence`);
+      this.debug(`DEBUG - Generating ${steps}-step ${type} sequence`);
 
-        // Process reference images if provided
-        let referenceImagesData: Array<{ data: string; mimeType: string }> | undefined;
-        if (request.referenceImages && request.referenceImages.length > 0) {
-          if (request.referenceImages.length > 14) {
-            return {
-              success: false,
-              message: 'Too many reference images provided',
-              error: `Maximum 14 reference images allowed, but ${request.referenceImages.length} were provided`,
-            };
-          }
-
-          this.debug(
-            `DEBUG - Processing ${request.referenceImages.length} reference image(s)`,
-          );
-
-          referenceImagesData = [];
-          for (const refImagePath of request.referenceImages) {
-            const fileResult = FileHandler.findInputFile(refImagePath);
-            if (!fileResult.found) {
-              return {
-                success: false,
-                message: `Reference image not found: ${refImagePath}`,
-                error: `Searched in: ${fileResult.searchedPaths.join(', ')}`,
-              };
-            }
-
-            const imageBase64 = await FileHandler.readImageAsBase64(
-              fileResult.filePath!,
-            );
-            const ext = fileResult.filePath!.toLowerCase().split('.').pop();
-            const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
-
-            referenceImagesData.push({
-              data: imageBase64,
-              mimeType,
-            });
-          }
-
-          this.debug(
-            `DEBUG - Successfully loaded ${referenceImagesData.length} reference image(s)`,
-          );
+      // Process reference images if provided
+      let referenceImagesData: Array<{ data: string; mimeType: string }> | undefined;
+      if (request.referenceImages && request.referenceImages.length > 0) {
+        if (request.referenceImages.length > 14) {
+          return {
+            success: false,
+            message: 'Too many reference images provided',
+            error: `Maximum 14 reference images allowed, but ${request.referenceImages.length} were provided`,
+          };
         }
 
-        // Generate each step of the story/process
-        for (let i = 0; i < steps; i++) {
-          const stepNumber = i + 1;
-          let stepPrompt = `${request.prompt}, step ${stepNumber} of ${steps}`;
+        this.debug(
+          `DEBUG - Processing ${request.referenceImages.length} reference image(s)`,
+        );
 
-          // Add context based on type
-          switch (type) {
-            case 'story':
-              stepPrompt += `, narrative sequence, ${style} art style`;
-              break;
-            case 'process':
-              stepPrompt += `, procedural step, instructional illustration`;
-              break;
-            case 'tutorial':
-              stepPrompt += `, tutorial step, educational diagram`;
-              break;
-            case 'timeline':
-              stepPrompt += `, chronological progression, timeline visualization`;
-              break;
+        referenceImagesData = [];
+        for (const refImagePath of request.referenceImages) {
+          const fileResult = FileHandler.findInputFile(refImagePath);
+          if (!fileResult.found) {
+            return {
+              success: false,
+              message: `Reference image not found: ${refImagePath}`,
+              error: `Searched in: ${fileResult.searchedPaths.join(', ')}`,
+            };
           }
 
-          // Add transition context
-          if (i > 0) {
-            stepPrompt += `, ${transition} transition from previous step`;
-          }
+          const imageBase64 = await FileHandler.readImageAsBase64(
+            fileResult.filePath!,
+          );
+          const ext = fileResult.filePath!.toLowerCase().split('.').pop();
+          const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
 
-          this.debug(`DEBUG - Generating step ${stepNumber}: ${stepPrompt}`);
+          referenceImagesData.push({
+            data: imageBase64,
+            mimeType,
+          });
+        }
 
-          // Define resolution outside try block so it's accessible in catch
-          const resolution = request.resolution || ImageGenerator.DEFAULT_RESOLUTION;
+        this.debug(
+          `DEBUG - Successfully loaded ${referenceImagesData.length} reference image(s)`,
+        );
+      }
 
-          try {
-            // Use REST API
-            const response = await this.callGeminiRestApi(
-              stepPrompt,
-              resolution,
-              request.aspectRatio,
-              undefined,
-              undefined,
-              request.seed,
-              referenceImagesData,
-            );
+      type StoryStepResult = {
+        success: boolean;
+        filePath?: string;
+        error?: string;
+        authError?: boolean;
+      };
 
-            if (response.candidates && response.candidates[0]?.content?.parts) {
-              for (const part of response.candidates[0].content.parts) {
-                let imageBase64: string | undefined;
+      const generateStep = async (
+        stepIndex: number,
+      ): Promise<StoryStepResult> => {
+        const stepNumber = stepIndex + 1;
+        let stepPrompt = `${request.prompt}, step ${stepNumber} of ${steps}`;
 
-                if (part.inlineData?.data) {
-                  imageBase64 = part.inlineData.data;
-                } else if (part.text && this.isValidBase64ImageData(part.text)) {
-                  imageBase64 = part.text;
+        // Add context based on type
+        switch (type) {
+          case 'story':
+            stepPrompt += `, narrative sequence, ${style} art style`;
+            break;
+          case 'process':
+            stepPrompt += `, procedural step, instructional illustration`;
+            break;
+          case 'tutorial':
+            stepPrompt += `, tutorial step, educational diagram`;
+            break;
+          case 'timeline':
+            stepPrompt += `, chronological progression, timeline visualization`;
+            break;
+        }
+
+        // Add transition context
+        if (stepIndex > 0) {
+          stepPrompt += `, ${transition} transition from previous step`;
+        }
+
+        this.debug(`DEBUG - Generating step ${stepNumber}: ${stepPrompt}`);
+
+        try {
+          // Use REST API
+          const response = await this.callGeminiRestApi(
+            stepPrompt,
+            resolution,
+            request.aspectRatio,
+            undefined,
+            undefined,
+            request.seed,
+            referenceImagesData,
+          );
+
+          if (response.candidates && response.candidates[0]?.content?.parts) {
+            for (const part of response.candidates[0].content.parts) {
+              let imageBase64: string | undefined;
+
+              if (part.inlineData?.data) {
+                imageBase64 = part.inlineData.data;
+              } else if (part.text && this.isValidBase64ImageData(part.text)) {
+                imageBase64 = part.text;
+              }
+
+              if (imageBase64) {
+                const filenameIndex = request.filename ? stepIndex : 0;
+                const filename = FileHandler.generateFilename(
+                  `${type}step${stepNumber}${request.prompt}`,
+                  request.fileFormat || 'jpeg', // Stories default to jpg
+                  filenameIndex,
+                  request.filename,
+                  forceSuffix,
+                );
+                const fullPath = await FileHandler.saveImageFromBase64(
+                  imageBase64,
+                  outputPath,
+                  filename,
+                );
+                this.debug(`DEBUG - Step ${stepNumber} saved to:`, fullPath);
+
+                // Calculate image file size and log
+                const fileStats = fs.statSync(fullPath);
+                const storyGenerationConfig: Record<string, unknown> = {
+                  responseModalities: ['Image'],
+                };
+                const isGemini3Story = this.modelName.includes('gemini-3');
+                if (request.aspectRatio || (isGemini3Story && resolution)) {
+                  const imageConfig: Record<string, unknown> = {};
+                  if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
+                  if (isGemini3Story && resolution) imageConfig.imageSize = resolution;
+                  storyGenerationConfig.imageConfig = imageConfig;
                 }
-
-                if (imageBase64) {
-                  const filenameIndex = request.filename ? i : 0;
-                  const filename = FileHandler.generateFilename(
-                    `${type}step${stepNumber}${request.prompt}`,
-                    request.fileFormat || 'jpeg', // Stories default to jpg
-                    filenameIndex,
-                    request.filename,
-                    forceSuffix,
-                  );
-                  const fullPath = await FileHandler.saveImageFromBase64(
-                    imageBase64,
-                    outputPath,
-                    filename,
-                  );
-                  generatedFiles.push(fullPath);
-                  this.debug(`DEBUG - Step ${stepNumber} saved to:`, fullPath);
-
-                  // Calculate image file size and log
-                  const fileStats = fs.statSync(fullPath);
-                  const storyGenerationConfig: Record<string, unknown> = {
-                    responseModalities: ['Image'],
-                  };
-                  const isGemini3Story = this.modelName.includes('gemini-3');
-                  if (request.aspectRatio || (isGemini3Story && resolution)) {
-                    const imageConfig: Record<string, unknown> = {};
-                    if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
-                    if (isGemini3Story && resolution) imageConfig.imageSize = resolution;
-                    storyGenerationConfig.imageConfig = imageConfig;
-                  }
-                  if (request.seed !== undefined) {
-                    storyGenerationConfig.seed = request.seed;
-                  }
-                  const logEntry = Logger.createLogEntry(
-                    'story',
-                    request as unknown as Record<string, unknown>,
-                    {
-                      model: this.modelName,
-                      prompt: stepPrompt,
-                      resolution,
-                      aspectRatio: request.aspectRatio,
-                      hasInputImage: false,
-                      generationConfig: storyGenerationConfig,
-                    },
-                    {
-                      success: true,
-                      imageSize: fileStats.size,
-                      filePath: fullPath,
-                    },
-                  );
-                  Logger.log(logEntry);
-
-                  break;
+                if (request.seed !== undefined) {
+                  storyGenerationConfig.seed = request.seed;
                 }
+                const logEntry = Logger.createLogEntry(
+                  'story',
+                  request as unknown as Record<string, unknown>,
+                  {
+                    model: this.modelName,
+                    prompt: stepPrompt,
+                    resolution,
+                    aspectRatio: request.aspectRatio,
+                    hasInputImage: false,
+                    generationConfig: storyGenerationConfig,
+                  },
+                  {
+                    success: true,
+                    imageSize: fileStats.size,
+                    filePath: fullPath,
+                  },
+                );
+                Logger.log(logEntry);
+
+                return { success: true, filePath: fullPath };
               }
             }
-          } catch (error: unknown) {
-            const errorMessage = this.handleApiError(error);
-            if (!firstError) {
-              firstError = errorMessage;
-            }
-            this.debug(
-              `DEBUG - Error generating step ${stepNumber}:`,
-              errorMessage,
-            );
-
-            // Log error case
-            const storyErrorConfig: Record<string, unknown> = {
-              responseModalities: ['Image'],
-            };
-            const isGemini3StoryErr = this.modelName.includes('gemini-3');
-            if (request.aspectRatio || (isGemini3StoryErr && resolution)) {
-              const imageConfig: Record<string, unknown> = {};
-              if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
-              if (isGemini3StoryErr && resolution) imageConfig.imageSize = resolution;
-              storyErrorConfig.imageConfig = imageConfig;
-            }
-            if (request.seed !== undefined) {
-              storyErrorConfig.seed = request.seed;
-            }
-            const logEntry = Logger.createLogEntry(
-              'story',
-              request as unknown as Record<string, unknown>,
-              {
-                model: this.modelName,
-                prompt: stepPrompt,
-                resolution,
-                aspectRatio: request.aspectRatio,
-                hasInputImage: false,
-                generationConfig: storyErrorConfig,
-              },
-              {
-                success: false,
-                error: errorMessage,
-              },
-            );
-            Logger.log(logEntry);
-
-            if (errorMessage.toLowerCase().includes('authentication failed')) {
-              return {
-                success: false,
-                message: 'Story generation failed',
-                error: errorMessage,
-              };
-            }
           }
 
-          // Check if this step was actually generated
-          if (generatedFiles.length < stepNumber) {
+          return { success: false, error: 'No image data found in API response' };
+        } catch (error: unknown) {
+          const errorMessage = this.handleApiError(error);
+          this.debug(
+            `DEBUG - Error generating step ${stepNumber}:`,
+            errorMessage,
+          );
+
+          // Log error case
+          const storyErrorConfig: Record<string, unknown> = {
+            responseModalities: ['Image'],
+          };
+          const isGemini3StoryErr = this.modelName.includes('gemini-3');
+          if (request.aspectRatio || (isGemini3StoryErr && resolution)) {
+            const imageConfig: Record<string, unknown> = {};
+            if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
+            if (isGemini3StoryErr && resolution) imageConfig.imageSize = resolution;
+            storyErrorConfig.imageConfig = imageConfig;
+          }
+          if (request.seed !== undefined) {
+            storyErrorConfig.seed = request.seed;
+          }
+          const logEntry = Logger.createLogEntry(
+            'story',
+            request as unknown as Record<string, unknown>,
+            {
+              model: this.modelName,
+              prompt: stepPrompt,
+              resolution,
+              aspectRatio: request.aspectRatio,
+              hasInputImage: false,
+              generationConfig: storyErrorConfig,
+            },
+            {
+              success: false,
+              error: errorMessage,
+            },
+          );
+          Logger.log(logEntry);
+
+          const authError = errorMessage
+            .toLowerCase()
+            .includes('authentication failed');
+          return { success: false, error: errorMessage, authError };
+        }
+      };
+
+      for (let i = 0; i < steps; i += parallelCount) {
+        const batchIndices: number[] = [];
+        for (let j = 0; j < parallelCount && i + j < steps; j++) {
+          batchIndices.push(i + j);
+        }
+
+        const batchResults = await Promise.all(
+          batchIndices.map((stepIndex) => generateStep(stepIndex)),
+        );
+
+        let authError: string | null = null;
+
+        for (let j = 0; j < batchResults.length; j++) {
+          const result = batchResults[j];
+          const stepIndex = batchIndices[j];
+          const stepNumber = stepIndex + 1;
+
+          if (result.success && result.filePath) {
+            generatedFiles[stepIndex] = result.filePath;
+            continue;
+          }
+
+          if (
+            !firstError &&
+            result.error &&
+            result.error !== 'No image data found in API response'
+          ) {
+            firstError = result.error;
+          }
+
+          if (result.authError && result.error) {
+            authError = result.error;
+          } else {
             this.debug(
               `DEBUG - WARNING: Step ${stepNumber} failed to generate - no valid image data received`,
             );
           }
         }
 
-        this.debug(
-          `DEBUG - Story generation completed. Generated ${generatedFiles.length} out of ${steps} requested images`,
-        );
-
-        if (generatedFiles.length === 0) {
+        if (authError) {
           return {
             success: false,
-            message: 'Failed to generate any story sequence images',
-            error: firstError || 'No image data found in API responses',
+            message: 'Story generation failed',
+            error: authError,
           };
         }
+      }
 
-        // Handle preview if requested
-        await this.handlePreview(generatedFiles, request);
+      const completedFiles = generatedFiles.filter(
+        (file): file is string => Boolean(file),
+      );
 
-        const wasFullySuccessful = generatedFiles.length === steps;
-        const successMessage = wasFullySuccessful
-          ? `Successfully generated complete ${steps}-step ${type} sequence`
-          : `Generated ${generatedFiles.length} out of ${steps} requested ${type} steps (${steps - generatedFiles.length} steps failed)`;
+      this.debug(
+        `DEBUG - Story generation completed. Generated ${completedFiles.length} out of ${steps} requested images`,
+      );
 
-        return {
-          success: true,
-          message: successMessage,
-          generatedFiles,
-        };
-      } catch (error: unknown) {
-        this.debug('DEBUG - Error in generateStorySequence:', error);
+      if (completedFiles.length === 0) {
         return {
           success: false,
-          message: `Failed to generate ${request.mode} sequence`,
-          error: this.handleApiError(error),
+          message: 'Failed to generate any story sequence images',
+          error: firstError || 'No image data found in API responses',
         };
       }
+
+      // Handle preview if requested
+      await this.handlePreview(completedFiles, request);
+
+      const wasFullySuccessful = completedFiles.length === steps;
+      const successMessage = wasFullySuccessful
+        ? `Successfully generated complete ${steps}-step ${type} sequence`
+        : `Generated ${completedFiles.length} out of ${steps} requested ${type} steps (${steps - completedFiles.length} steps failed)`;
+
+      return {
+        success: true,
+        message: successMessage,
+        generatedFiles: completedFiles,
+      };
+    } catch (error: unknown) {
+      this.debug('DEBUG - Error in generateStorySequence:', error);
+      return {
+        success: false,
+        message: `Failed to generate ${request.mode} sequence`,
+        error: this.handleApiError(error),
+      };
     }
+  }
   async editImage(
     request: ImageGenerationRequest,
   ): Promise<ImageGenerationResponse> {

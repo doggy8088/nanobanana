@@ -23,7 +23,7 @@ export interface ImageGenerationRequest {
   resolution?: ImageResolution;
   // Aspect ratio option
   aspectRatio?: AspectRatio;
-  // Parallel generation option
+  // Parallel generation option (1-8, default: 2)
   parallel?: number;
   // Preview options
   preview?: boolean;

@@ -140,10 +140,10 @@ class NanoBananaServer {
                 parallel: {
                   type: 'number',
                   description:
-                    'Number of images to generate in parallel (1-8, default: 1)',
+                    'Number of images to generate in parallel (1-8, default: 2)',
                   minimum: 1,
                   maximum: 8,
-                  default: 1,
+                  default: 2,
                 },
               },
               required: ['prompt'],
@@ -181,6 +181,14 @@ class NanoBananaServer {
                     'Automatically open generated images in default viewer',
                   default: false,
                 },
+                parallel: {
+                  type: 'number',
+                  description:
+                    'Number of images to generate in parallel (1-8, default: 2)',
+                  minimum: 1,
+                  maximum: 8,
+                  default: 2,
+                },
               },
               required: ['prompt', 'file'],
             },
@@ -217,6 +225,14 @@ class NanoBananaServer {
                   description:
                     'Automatically open generated images in default viewer',
                   default: false,
+                },
+                parallel: {
+                  type: 'number',
+                  description:
+                    'Number of images to generate in parallel (1-8, default: 2)',
+                  minimum: 1,
+                  maximum: 8,
+                  default: 2,
                 },
               },
               required: ['prompt', 'file'],
@@ -269,7 +285,7 @@ class NanoBananaServer {
                   type: 'string',
                   enum: ['png', 'jpeg'],
                   description: 'Output format',
-                  default: 'jpeg',
+                  default: 'png',
                 },
                 background: {
                   type: 'string',
@@ -295,6 +311,14 @@ class NanoBananaServer {
                   description:
                     'Automatically open generated images in default viewer',
                   default: false,
+                },
+                parallel: {
+                  type: 'number',
+                  description:
+                    'Number of images to generate in parallel (1-8, default: 2)',
+                  minimum: 1,
+                  maximum: 8,
+                  default: 2,
                 },
               },
               required: ['prompt'],
@@ -372,6 +396,14 @@ class NanoBananaServer {
                   description:
                     'Automatically open generated images in default viewer',
                   default: false,
+                },
+                parallel: {
+                  type: 'number',
+                  description:
+                    'Number of images to generate in parallel (1-8, default: 2)',
+                  minimum: 1,
+                  maximum: 8,
+                  default: 2,
                 },
               },
               required: ['prompt'],
@@ -451,6 +483,14 @@ class NanoBananaServer {
                   description:
                     'Automatically open generated images in default viewer',
                   default: false,
+                },
+                parallel: {
+                  type: 'number',
+                  description:
+                    'Number of images to generate in parallel (1-8, default: 2)',
+                  minimum: 1,
+                  maximum: 8,
+                  default: 2,
                 },
               },
               required: ['prompt'],
@@ -538,6 +578,14 @@ class NanoBananaServer {
                     'Automatically open generated images in default viewer',
                   default: false,
                 },
+                parallel: {
+                  type: 'number',
+                  description:
+                    'Number of images to generate in parallel (1-8, default: 2)',
+                  minimum: 1,
+                  maximum: 8,
+                  default: 2,
+                },
               },
               required: ['prompt'],
             },
@@ -585,7 +633,7 @@ class NanoBananaServer {
                 (args?.noPreview as boolean) ||
                 (args?.['no-preview'] as boolean),
               resolution: (args?.resolution as '1K' | '2K' | '4K') || '1K',
-              parallel: (args?.parallel as number) || 1,
+              parallel: (args?.parallel as number | undefined) ?? 2,
             };
             response =
               await this.imageGenerator.generateTextToImage(imageRequest);
@@ -603,6 +651,7 @@ class NanoBananaServer {
               noPreview:
                 (args?.noPreview as boolean) ||
                 (args?.['no-preview'] as boolean),
+              parallel: (args?.parallel as number | undefined) ?? 2,
             };
             response = await this.imageGenerator.editImage(editRequest);
             break;
@@ -619,6 +668,7 @@ class NanoBananaServer {
               noPreview:
                 (args?.noPreview as boolean) ||
                 (args?.['no-preview'] as boolean),
+              parallel: (args?.parallel as number | undefined) ?? 2,
             };
             response = await this.imageGenerator.editImage(restoreRequest);
             break;
@@ -635,7 +685,7 @@ class NanoBananaServer {
               referenceImages: args?.files as string[],
               outputCount: iconSizes?.length || 1,
               mode: 'generate',
-              fileFormat: (args?.format as 'png' | 'jpeg') || 'jpeg',
+              fileFormat: (args?.format as 'png' | 'jpeg') || 'png',
               filename: args?.filename as string,
               filenameSuffixes: iconFilenameSuffixes,
               resolution: (args?.resolution as '1K' | '2K' | '4K') || '1K',
@@ -643,6 +693,7 @@ class NanoBananaServer {
               noPreview:
                 (args?.noPreview as boolean) ||
                 (args?.['no-preview'] as boolean),
+              parallel: (args?.parallel as number | undefined) ?? 2,
             };
             response =
               await this.imageGenerator.generateTextToImage(iconRequest);
@@ -664,6 +715,7 @@ class NanoBananaServer {
               noPreview:
                 (args?.noPreview as boolean) ||
                 (args?.['no-preview'] as boolean),
+              parallel: (args?.parallel as number | undefined) ?? 2,
             };
             response =
               await this.imageGenerator.generateTextToImage(patternRequest);
@@ -683,6 +735,7 @@ class NanoBananaServer {
               noPreview:
                 (args?.noPreview as boolean) ||
                 (args?.['no-preview'] as boolean),
+              parallel: (args?.parallel as number | undefined) ?? 2,
             };
             response = await this.imageGenerator.generateStorySequence(
               storyRequest,
@@ -703,6 +756,7 @@ class NanoBananaServer {
               noPreview:
                 (args?.noPreview as boolean) ||
                 (args?.['no-preview'] as boolean),
+              parallel: (args?.parallel as number | undefined) ?? 2,
             };
             response =
               await this.imageGenerator.generateTextToImage(diagramRequest);
