@@ -302,6 +302,7 @@ gemini extensions install https://github.com/doggy8088/nanobanana
 
 ### 故事選項
 
+**`--files="file1.jpg,file2.png"`** - 參考圖片（1-14 張，以逗號分隔）
 **`--steps=N`** - 序列圖片張數（2-8，預設：4）
 **`--type="story|process|tutorial|timeline"`** - 序列類型（預設：story）
 **`--style="consistent|evolving"`** - 各格之間的視覺一致性（預設：consistent）
@@ -309,8 +310,10 @@ gemini extensions install https://github.com/doggy8088/nanobanana
 **`--transition="smooth|dramatic|fade"`** - 步驟間轉場風格（預設：smooth）
 **`--format="storyboard|individual"`** - 輸出格式（預設：individual）
 **`--filename="name"`** - 指定輸出檔名（多張自動加後綴）
+**`--parallel=N`** - 並行生成張數（1-8，預設：2）
+**`--preview`** - 生成後自動預覽
 
-故事序列會逐張生成，並將前一張作為風格參考，因此不支援並行生成。
+故事序列不會自動參考前一張圖片；若提供 `--files` 參考圖，整個系列都會以該參考圖（或參考圖組）為基準來保持一致性。
 
 ### 故事範例
 

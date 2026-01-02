@@ -140,7 +140,7 @@ class NanoBananaServer {
                 parallel: {
                   type: 'number',
                   description:
-                    'Number of images to generate in parallel (ignored for story sequences; steps run sequentially)',
+                    'Number of images to generate in parallel (1-8, default: 2)',
                   minimum: 1,
                   maximum: 8,
                   default: 2,

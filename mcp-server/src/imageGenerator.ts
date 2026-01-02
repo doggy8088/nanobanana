@@ -789,20 +789,18 @@ export class ImageGenerator {
       const resolution = request.resolution || ImageGenerator.DEFAULT_RESOLUTION;
       const requestedParallel =
         request.parallel ?? ImageGenerator.DEFAULT_PARALLEL;
-      if (requestedParallel > 1) {
-        this.debug(
-          `DEBUG - Story sequences run sequentially; ignoring parallel request of ${requestedParallel}`,
-        );
-      }
+      const parallelCount = Math.min(Math.max(1, requestedParallel), 8);
       const generatedFiles: Array<string | null> = Array(steps).fill(null);
       let firstError: string | null = null;
 
-      this.debug(`DEBUG - Generating ${steps}-step ${type} sequence`);
+      this.debug(
+        `DEBUG - Generating ${steps}-step ${type} sequence with parallelism of ${parallelCount}`,
+      );
 
       // Process reference images if provided
       let referenceImagesData: Array<{ data: string; mimeType: string }> | undefined;
       if (request.referenceImages && request.referenceImages.length > 0) {
-        const maxReferenceImages = steps > 1 ? 13 : 14;
+        const maxReferenceImages = 14;
         if (request.referenceImages.length > maxReferenceImages) {
           return {
             success: false,
@@ -1019,58 +1017,43 @@ export class ImageGenerator {
         }
       };
 
-      const buildReferenceFromFile = async (
-        filePath: string,
-      ): Promise<{ data: string; mimeType: string }> => {
-        const imageBase64 = await FileHandler.readImageAsBase64(filePath);
-        const ext = filePath.toLowerCase().split('.').pop();
-        const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
-        return { data: imageBase64, mimeType };
-      };
-
-      let previousStepReference: { data: string; mimeType: string } | null = null;
-
-      for (let i = 0; i < steps; i++) {
-        const stepReferenceImagesData = referenceImagesData
-          ? [...referenceImagesData]
-          : [];
-
-        if (previousStepReference) {
-          stepReferenceImagesData.push(previousStepReference);
-        }
-
-        const result = await generateStep(
-          i,
-          stepReferenceImagesData.length > 0 ? stepReferenceImagesData : undefined,
+      for (let i = 0; i < steps; i += parallelCount) {
+        const batchIndices = Array.from(
+          { length: Math.min(parallelCount, steps - i) },
+          (_, batchIndex) => i + batchIndex,
         );
-        const stepNumber = i + 1;
 
-        if (result.success && result.filePath) {
-          generatedFiles[i] = result.filePath;
-          previousStepReference = await buildReferenceFromFile(result.filePath);
-          continue;
-        }
-
-        if (
-          !firstError &&
-          result.error &&
-          result.error !== 'No image data found in API response'
-        ) {
-          firstError = result.error;
-        }
-
-        if (result.authError && result.error) {
-          return {
-            success: false,
-            message: 'Story generation failed',
-            error: result.error,
-          };
-        }
-
-        this.debug(
-          `DEBUG - Stopping story generation after step ${stepNumber} due to missing image data for sequential continuity`,
+        const results = await Promise.all(
+          batchIndices.map((stepIndex) =>
+            generateStep(stepIndex, referenceImagesData),
+          ),
         );
-        break;
+
+        for (let batchOffset = 0; batchOffset < results.length; batchOffset++) {
+          const stepIndex = batchIndices[batchOffset];
+          const result = results[batchOffset];
+
+          if (result.success && result.filePath) {
+            generatedFiles[stepIndex] = result.filePath;
+            continue;
+          }
+
+          if (
+            !firstError &&
+            result.error &&
+            result.error !== 'No image data found in API response'
+          ) {
+            firstError = result.error;
+          }
+
+          if (result.authError && result.error) {
+            return {
+              success: false,
+              message: 'Story generation failed',
+              error: result.error,
+            };
+          }
+        }
       }
 
       const completedFiles = generatedFiles.filter(
