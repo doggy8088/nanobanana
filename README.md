@@ -310,6 +310,8 @@ gemini extensions install https://github.com/doggy8088/nanobanana
 **`--format="storyboard|individual"`** - 輸出格式（預設：individual）
 **`--filename="name"`** - 指定輸出檔名（多張自動加後綴）
 
+故事序列會逐張生成，並將前一張作為風格參考，因此不支援並行生成。
+
 ### 故事範例
 
 ```bash

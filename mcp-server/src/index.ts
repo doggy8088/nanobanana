@@ -84,9 +84,9 @@ class NanoBananaServer {
                   type: 'array',
                   items: { type: 'string' },
                   description:
-                    'Optional array of reference image file paths (1-14 images)',
+                    'Optional array of reference image file paths (1-13 images; one slot reserved for the previous step)',
                   minItems: 1,
-                  maxItems: 14,
+                  maxItems: 13,
                 },
                 filename: {
                   type: 'string',
@@ -140,7 +140,7 @@ class NanoBananaServer {
                 parallel: {
                   type: 'number',
                   description:
-                    'Number of images to generate in parallel (1-8, default: 2)',
+                    'Number of images to generate in parallel (ignored for story sequences; steps run sequentially)',
                   minimum: 1,
                   maximum: 8,
                   default: 2,

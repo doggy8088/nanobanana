@@ -737,7 +737,11 @@ export class ImageGenerator {
       const resolution = request.resolution || ImageGenerator.DEFAULT_RESOLUTION;
       const requestedParallel =
         request.parallel ?? ImageGenerator.DEFAULT_PARALLEL;
-      const parallelCount = Math.min(Math.max(1, requestedParallel), 8);
+      if (requestedParallel > 1) {
+        this.debug(
+          `DEBUG - Story sequences run sequentially; ignoring parallel request of ${requestedParallel}`,
+        );
+      }
       const generatedFiles: Array<string | null> = Array(steps).fill(null);
       let firstError: string | null = null;
 
@@ -746,11 +750,12 @@ export class ImageGenerator {
       // Process reference images if provided
       let referenceImagesData: Array<{ data: string; mimeType: string }> | undefined;
       if (request.referenceImages && request.referenceImages.length > 0) {
-        if (request.referenceImages.length > 14) {
+        const maxReferenceImages = steps > 1 ? 13 : 14;
+        if (request.referenceImages.length > maxReferenceImages) {
           return {
             success: false,
             message: 'Too many reference images provided',
-            error: `Maximum 14 reference images allowed, but ${request.referenceImages.length} were provided`,
+            error: `Maximum ${maxReferenceImages} reference images allowed for story sequences, but ${request.referenceImages.length} were provided`,
           };
         }
 
@@ -795,6 +800,7 @@ export class ImageGenerator {
 
       const generateStep = async (
         stepIndex: number,
+        stepReferenceImagesData?: Array<{ data: string; mimeType: string }>,
       ): Promise<StoryStepResult> => {
         const stepNumber = stepIndex + 1;
         let stepPrompt = `${request.prompt}, step ${stepNumber} of ${steps}`;
@@ -831,7 +837,7 @@ export class ImageGenerator {
             undefined,
             undefined,
             request.seed,
-            referenceImagesData,
+            stepReferenceImagesData,
           );
 
           if (response.candidates && response.candidates[0]?.content?.parts) {
@@ -946,52 +952,58 @@ export class ImageGenerator {
         }
       };
 
-      for (let i = 0; i < steps; i += parallelCount) {
-        const batchIndices: number[] = [];
-        for (let j = 0; j < parallelCount && i + j < steps; j++) {
-          batchIndices.push(i + j);
+      const buildReferenceFromFile = async (
+        filePath: string,
+      ): Promise<{ data: string; mimeType: string }> => {
+        const imageBase64 = await FileHandler.readImageAsBase64(filePath);
+        const ext = filePath.toLowerCase().split('.').pop();
+        const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
+        return { data: imageBase64, mimeType };
+      };
+
+      let previousStepReference: { data: string; mimeType: string } | null = null;
+
+      for (let i = 0; i < steps; i++) {
+        const stepReferenceImagesData = referenceImagesData
+          ? [...referenceImagesData]
+          : [];
+
+        if (previousStepReference) {
+          stepReferenceImagesData.push(previousStepReference);
         }
 
-        const batchResults = await Promise.all(
-          batchIndices.map((stepIndex) => generateStep(stepIndex)),
+        const result = await generateStep(
+          i,
+          stepReferenceImagesData.length > 0 ? stepReferenceImagesData : undefined,
         );
+        const stepNumber = i + 1;
 
-        let authError: string | null = null;
-
-        for (let j = 0; j < batchResults.length; j++) {
-          const result = batchResults[j];
-          const stepIndex = batchIndices[j];
-          const stepNumber = stepIndex + 1;
-
-          if (result.success && result.filePath) {
-            generatedFiles[stepIndex] = result.filePath;
-            continue;
-          }
-
-          if (
-            !firstError &&
-            result.error &&
-            result.error !== 'No image data found in API response'
-          ) {
-            firstError = result.error;
-          }
-
-          if (result.authError && result.error) {
-            authError = result.error;
-          } else {
-            this.debug(
-              `DEBUG - WARNING: Step ${stepNumber} failed to generate - no valid image data received`,
-            );
-          }
+        if (result.success && result.filePath) {
+          generatedFiles[i] = result.filePath;
+          previousStepReference = await buildReferenceFromFile(result.filePath);
+          continue;
         }
 
-        if (authError) {
+        if (
+          !firstError &&
+          result.error &&
+          result.error !== 'No image data found in API response'
+        ) {
+          firstError = result.error;
+        }
+
+        if (result.authError && result.error) {
           return {
             success: false,
             message: 'Story generation failed',
-            error: authError,
+            error: result.error,
           };
         }
+
+        this.debug(
+          `DEBUG - Stopping story generation after step ${stepNumber} due to missing image data for sequential continuity`,
+        );
+        break;
       }
 
       const completedFiles = generatedFiles.filter(
