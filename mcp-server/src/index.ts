@@ -234,6 +234,14 @@ class NanoBananaServer {
                   description:
                     'Description of the icon or UI element to generate',
                 },
+                files: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description:
+                    'Optional array of reference image file paths (1-14 images)',
+                  minItems: 1,
+                  maxItems: 14,
+                },
                 filename: {
                   type: 'string',
                   description:
@@ -304,6 +312,14 @@ class NanoBananaServer {
                   description:
                     'Description of the pattern or texture to generate',
                 },
+                files: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description:
+                    'Optional array of reference image file paths (1-14 images)',
+                  minItems: 1,
+                  maxItems: 14,
+                },
                 filename: {
                   type: 'string',
                   description:
@@ -372,6 +388,14 @@ class NanoBananaServer {
                   type: 'string',
                   description:
                     'Description of the story or process to visualize',
+                },
+                files: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description:
+                    'Optional array of reference image file paths (1-14 images)',
+                  minItems: 1,
+                  maxItems: 14,
                 },
                 filename: {
                   type: 'string',
@@ -443,6 +467,14 @@ class NanoBananaServer {
                   type: 'string',
                   description:
                     'Description of the diagram content and structure',
+                },
+                files: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description:
+                    'Optional array of reference image file paths (1-14 images)',
+                  minItems: 1,
+                  maxItems: 14,
                 },
                 filename: {
                   type: 'string',
@@ -600,6 +632,7 @@ class NanoBananaServer {
                 : undefined;
             const iconRequest: ImageGenerationRequest = {
               prompt: this.buildIconPrompt(args),
+              referenceImages: args?.files as string[],
               outputCount: iconSizes?.length || 1,
               mode: 'generate',
               fileFormat: (args?.format as 'png' | 'jpeg') || 'jpeg',
@@ -620,6 +653,7 @@ class NanoBananaServer {
             const patternSize = args?.size as string | undefined;
             const patternRequest: ImageGenerationRequest = {
               prompt: this.buildPatternPrompt(args),
+              referenceImages: args?.files as string[],
               outputCount: 1,
               mode: 'generate',
               filename: args?.filename as string,
@@ -639,6 +673,7 @@ class NanoBananaServer {
           case 'generate_story': {
             const storyRequest: ImageGenerationRequest = {
               prompt: args?.prompt as string,
+              referenceImages: args?.files as string[],
               outputCount: (args?.steps as number) || 4,
               mode: 'generate',
               variations: ['sequence-step'],
@@ -659,6 +694,7 @@ class NanoBananaServer {
           case 'generate_diagram': {
             const diagramRequest: ImageGenerationRequest = {
               prompt: this.buildDiagramPrompt(args),
+              referenceImages: args?.files as string[],
               outputCount: 1,
               mode: 'generate',
               filename: args?.filename as string,

@@ -736,6 +736,49 @@ export class ImageGenerator {
 
         this.debug(`DEBUG - Generating ${steps}-step ${type} sequence`);
 
+        // Process reference images if provided
+        let referenceImagesData: Array<{ data: string; mimeType: string }> | undefined;
+        if (request.referenceImages && request.referenceImages.length > 0) {
+          if (request.referenceImages.length > 14) {
+            return {
+              success: false,
+              message: 'Too many reference images provided',
+              error: `Maximum 14 reference images allowed, but ${request.referenceImages.length} were provided`,
+            };
+          }
+
+          this.debug(
+            `DEBUG - Processing ${request.referenceImages.length} reference image(s)`,
+          );
+
+          referenceImagesData = [];
+          for (const refImagePath of request.referenceImages) {
+            const fileResult = FileHandler.findInputFile(refImagePath);
+            if (!fileResult.found) {
+              return {
+                success: false,
+                message: `Reference image not found: ${refImagePath}`,
+                error: `Searched in: ${fileResult.searchedPaths.join(', ')}`,
+              };
+            }
+
+            const imageBase64 = await FileHandler.readImageAsBase64(
+              fileResult.filePath!,
+            );
+            const ext = fileResult.filePath!.toLowerCase().split('.').pop();
+            const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
+
+            referenceImagesData.push({
+              data: imageBase64,
+              mimeType,
+            });
+          }
+
+          this.debug(
+            `DEBUG - Successfully loaded ${referenceImagesData.length} reference image(s)`,
+          );
+        }
+
         // Generate each step of the story/process
         for (let i = 0; i < steps; i++) {
           const stepNumber = i + 1;
@@ -776,6 +819,7 @@ export class ImageGenerator {
               undefined,
               undefined,
               request.seed,
+              referenceImagesData,
             );
 
             if (response.candidates && response.candidates[0]?.content?.parts) {
