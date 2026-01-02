@@ -168,6 +168,13 @@ class NanoBananaServer {
                   description:
                     'Optional output filename for the edited image',
                 },
+                resolution: {
+                  type: 'string',
+                  enum: ['1K', '2K', '4K'],
+                  description:
+                    'Output image resolution (default: 4K)',
+                  default: '4K',
+                },
                 preview: {
                   type: 'boolean',
                   description:
@@ -197,6 +204,13 @@ class NanoBananaServer {
                   type: 'string',
                   description:
                     'Optional output filename for the restored image',
+                },
+                resolution: {
+                  type: 'string',
+                  enum: ['1K', '2K', '4K'],
+                  description:
+                    'Output image resolution (default: 4K)',
+                  default: '4K',
                 },
                 preview: {
                   type: 'boolean',
@@ -261,6 +275,13 @@ class NanoBananaServer {
                   description: 'Corner style for app icons',
                   default: 'rounded',
                 },
+                resolution: {
+                  type: 'string',
+                  enum: ['1K', '2K', '4K'],
+                  description:
+                    'Output image resolution (default: 4K)',
+                  default: '4K',
+                },
                 preview: {
                   type: 'boolean',
                   description:
@@ -322,6 +343,13 @@ class NanoBananaServer {
                   enum: ['tile', 'mirror'],
                   description: 'Tiling method for seamless patterns',
                   default: 'tile',
+                },
+                resolution: {
+                  type: 'string',
+                  enum: ['1K', '2K', '4K'],
+                  description:
+                    'Output image resolution (default: 4K)',
+                  default: '4K',
                 },
                 preview: {
                   type: 'boolean',
@@ -386,6 +414,13 @@ class NanoBananaServer {
                   enum: ['storyboard', 'individual'],
                   description: 'Output format',
                   default: 'individual',
+                },
+                resolution: {
+                  type: 'string',
+                  enum: ['1K', '2K', '4K'],
+                  description:
+                    'Output image resolution (default: 4K)',
+                  default: '4K',
                 },
                 preview: {
                   type: 'boolean',
@@ -458,6 +493,13 @@ class NanoBananaServer {
                   description: 'Label and annotation level',
                   default: 'detailed',
                 },
+                resolution: {
+                  type: 'string',
+                  enum: ['1K', '2K', '4K'],
+                  description:
+                    'Output image resolution (default: 4K)',
+                  default: '4K',
+                },
                 preview: {
                   type: 'boolean',
                   description:
@@ -524,6 +566,7 @@ class NanoBananaServer {
               inputImage: args?.file as string,
               mode: 'edit',
               filename: args?.filename as string,
+              resolution: (args?.resolution as '1K' | '2K' | '4K') || '4K',
               preview: args?.preview as boolean,
               noPreview:
                 (args?.noPreview as boolean) ||
@@ -539,6 +582,7 @@ class NanoBananaServer {
               inputImage: args?.file as string,
               mode: 'restore',
               filename: args?.filename as string,
+              resolution: (args?.resolution as '1K' | '2K' | '4K') || '4K',
               preview: args?.preview as boolean,
               noPreview:
                 (args?.noPreview as boolean) ||
@@ -561,6 +605,7 @@ class NanoBananaServer {
               fileFormat: (args?.format as 'png' | 'jpeg') || 'jpeg',
               filename: args?.filename as string,
               filenameSuffixes: iconFilenameSuffixes,
+              resolution: (args?.resolution as '1K' | '2K' | '4K') || '4K',
               preview: args?.preview as boolean,
               noPreview:
                 (args?.noPreview as boolean) ||
@@ -580,6 +625,7 @@ class NanoBananaServer {
               filename: args?.filename as string,
               filenameSuffixes:
                 args?.filename && patternSize ? [patternSize] : undefined,
+              resolution: (args?.resolution as '1K' | '2K' | '4K') || '4K',
               preview: args?.preview as boolean,
               noPreview:
                 (args?.noPreview as boolean) ||
@@ -597,6 +643,7 @@ class NanoBananaServer {
               mode: 'generate',
               variations: ['sequence-step'],
               filename: args?.filename as string,
+              resolution: (args?.resolution as '1K' | '2K' | '4K') || '4K',
               preview: args?.preview as boolean,
               noPreview:
                 (args?.noPreview as boolean) ||
@@ -615,6 +662,7 @@ class NanoBananaServer {
               outputCount: 1,
               mode: 'generate',
               filename: args?.filename as string,
+              resolution: (args?.resolution as '1K' | '2K' | '4K') || '4K',
               preview: args?.preview as boolean,
               noPreview:
                 (args?.noPreview as boolean) ||

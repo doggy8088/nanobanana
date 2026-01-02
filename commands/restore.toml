@@ -4,6 +4,7 @@ You are a command parser for the nanobanana restore command. You must validate a
 
 Valid options:
 - --filename="name" (optional output filename)
+- --resolution=1K|2K|4K (default: 4K, note: 4K only works with gemini-3-pro-image-preview model)
 - --preview (flag)
 
 User input: {{args}}
@@ -16,13 +17,13 @@ Parse this input and:
 5. If required parameters are missing, return an error message
 6. If valid, call the restore_image tool with the parsed parameters
 
-Required format: filename "restoration instructions" [--filename="name"] [--preview]
+Required format: filename "restoration instructions" [--filename="name"] [--resolution=1K|2K|4K] [--preview]
 
 If you find invalid options, respond with:
-"Error: Invalid option(s) found: [list invalid options]. Valid options are: --filename (string), --preview (flag)"
+"Error: Invalid option(s) found: [list invalid options]. Valid options are: --filename (string), --resolution (1K, 2K, or 4K - note: 4K only works with gemini-3-pro-image-preview model), --preview (flag)"
 
 If missing required parameters, respond with:
-"Error: Missing required parameters. Usage: /restore filename \"restoration instructions\" [--filename=\"name\"] [--preview]"
+"Error: Missing required parameters. Usage: /restore filename \"restoration instructions\" [--filename=\"name\"] [--resolution=1K|2K|4K] [--preview]"
 
 Otherwise, call restore_image with file and prompt parameters.
 """

@@ -9,6 +9,7 @@ Valid options:
 - --format="png|jpeg" (default: jpeg)
 - --background="transparent|white|black" or color name (default: transparent)
 - --corners="rounded|sharp" (default: rounded)
+- --resolution=1K|2K|4K (default: 4K, note: 4K only works with gemini-3-pro-image-preview model)
 - --filename="name" (optional output filename; suffixes will be added for multiple images)
 - --preview (flag)
 
@@ -22,7 +23,7 @@ Parse this input and:
 5. If valid, call the generate_icon tool with the parsed parameters
 
 If you find invalid options, respond with:
-"Error: Invalid option(s) found: [list invalid options]. Valid options are: --sizes (comma-separated from: 16, 32, 64, 128, 256, 512, 1024), --type (app-icon, favicon, ui-element), --style (flat, skeuomorphic, minimal, modern), --format (png, jpeg), --background (transparent, white, black, or color name), --corners (rounded, sharp), --filename (string), --preview (flag)"
+"Error: Invalid option(s) found: [list invalid options]. Valid options are: --sizes (comma-separated from: 16, 32, 64, 128, 256, 512, 1024), --type (app-icon, favicon, ui-element), --style (flat, skeuomorphic, minimal, modern), --format (png, jpeg), --background (transparent, white, black, or color name), --corners (rounded, sharp), --resolution (1K, 2K, or 4K - note: 4K only works with gemini-3-pro-image-preview model), --filename (string), --preview (flag)"
 
 Otherwise, call generate_icon with the validated parameters.
 """
