@@ -421,16 +421,43 @@ export class ImageGenerator {
     }
 
     try {
-      // Use REST API
-      const response = await this.callGeminiRestApi(
-        currentPrompt,
-        resolution,
-        request.aspectRatio,
-        undefined,
-        undefined,
-        request.seed,
-        referenceImagesData,
-      );
+      // Use REST API (retry once on failure)
+      let response: GeminiResponse;
+      try {
+        response = await this.callGeminiRestApi(
+          currentPrompt,
+          resolution,
+          request.aspectRatio,
+          undefined,
+          undefined,
+          request.seed,
+          referenceImagesData,
+        );
+      } catch (error: unknown) {
+        const errorMessage = this.handleApiError(error);
+        this.logRetry(
+          'generate',
+          request as unknown as Record<string, unknown>,
+          {
+            model: this.modelName,
+            prompt: currentPrompt,
+            resolution,
+            aspectRatio: request.aspectRatio,
+            hasInputImage: false,
+            generationConfig,
+          },
+          errorMessage,
+        );
+        response = await this.callGeminiRestApi(
+          currentPrompt,
+          resolution,
+          request.aspectRatio,
+          undefined,
+          undefined,
+          request.seed,
+          referenceImagesData,
+        );
+      }
 
       this.debug('DEBUG - API Response structure for variation', index + 1);
 
@@ -723,6 +750,31 @@ export class ImageGenerator {
     return `An unexpected error occurred: ${errorMessage}`;
   }
 
+  private logRetry(
+    type: 'generate' | 'edit' | 'restore' | 'story',
+    request: Record<string, unknown>,
+    apiCallInfo: {
+      model: string;
+      prompt: string;
+      resolution?: string;
+      aspectRatio?: string;
+      hasInputImage: boolean;
+      generationConfig: Record<string, unknown>;
+    },
+    errorMessage: string,
+  ): void {
+    const logEntry = Logger.createLogEntry(
+      type,
+      request,
+      apiCallInfo,
+      {
+        success: false,
+        error: `Retrying after API error: ${errorMessage}`,
+      },
+    );
+    Logger.log(logEntry);
+  }
+
   async generateStorySequence(
     request: ImageGenerationRequest,
     args?: StorySequenceArgs,
@@ -828,17 +880,58 @@ export class ImageGenerator {
 
         this.debug(`DEBUG - Generating step ${stepNumber}: ${stepPrompt}`);
 
+        const storyGenerationConfig: Record<string, unknown> = {
+          responseModalities: ['Image'],
+        };
+        const isGemini3Story = this.modelName.includes('gemini-3');
+        if (request.aspectRatio || (isGemini3Story && resolution)) {
+          const imageConfig: Record<string, unknown> = {};
+          if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
+          if (isGemini3Story && resolution) imageConfig.imageSize = resolution;
+          storyGenerationConfig.imageConfig = imageConfig;
+        }
+        if (request.seed !== undefined) {
+          storyGenerationConfig.seed = request.seed;
+        }
+
         try {
           // Use REST API
-          const response = await this.callGeminiRestApi(
-            stepPrompt,
-            resolution,
-            request.aspectRatio,
-            undefined,
-            undefined,
-            request.seed,
-            stepReferenceImagesData,
-          );
+          let response: GeminiResponse;
+          try {
+            response = await this.callGeminiRestApi(
+              stepPrompt,
+              resolution,
+              request.aspectRatio,
+              undefined,
+              undefined,
+              request.seed,
+              stepReferenceImagesData,
+            );
+          } catch (error: unknown) {
+            const errorMessage = this.handleApiError(error);
+            this.logRetry(
+              'story',
+              request as unknown as Record<string, unknown>,
+              {
+                model: this.modelName,
+                prompt: stepPrompt,
+                resolution,
+                aspectRatio: request.aspectRatio,
+                hasInputImage: false,
+                generationConfig: storyGenerationConfig,
+              },
+              errorMessage,
+            );
+            response = await this.callGeminiRestApi(
+              stepPrompt,
+              resolution,
+              request.aspectRatio,
+              undefined,
+              undefined,
+              request.seed,
+              stepReferenceImagesData,
+            );
+          }
 
           if (response.candidates && response.candidates[0]?.content?.parts) {
             for (const part of response.candidates[0].content.parts) {
@@ -868,19 +961,6 @@ export class ImageGenerator {
 
                 // Calculate image file size and log
                 const fileStats = fs.statSync(fullPath);
-                const storyGenerationConfig: Record<string, unknown> = {
-                  responseModalities: ['Image'],
-                };
-                const isGemini3Story = this.modelName.includes('gemini-3');
-                if (request.aspectRatio || (isGemini3Story && resolution)) {
-                  const imageConfig: Record<string, unknown> = {};
-                  if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
-                  if (isGemini3Story && resolution) imageConfig.imageSize = resolution;
-                  storyGenerationConfig.imageConfig = imageConfig;
-                }
-                if (request.seed !== undefined) {
-                  storyGenerationConfig.seed = request.seed;
-                }
                 const logEntry = Logger.createLogEntry(
                   'story',
                   request as unknown as Record<string, unknown>,
@@ -914,19 +994,6 @@ export class ImageGenerator {
           );
 
           // Log error case
-          const storyErrorConfig: Record<string, unknown> = {
-            responseModalities: ['Image'],
-          };
-          const isGemini3StoryErr = this.modelName.includes('gemini-3');
-          if (request.aspectRatio || (isGemini3StoryErr && resolution)) {
-            const imageConfig: Record<string, unknown> = {};
-            if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
-            if (isGemini3StoryErr && resolution) imageConfig.imageSize = resolution;
-            storyErrorConfig.imageConfig = imageConfig;
-          }
-          if (request.seed !== undefined) {
-            storyErrorConfig.seed = request.seed;
-          }
           const logEntry = Logger.createLogEntry(
             'story',
             request as unknown as Record<string, unknown>,
@@ -936,7 +1003,7 @@ export class ImageGenerator {
               resolution,
               aspectRatio: request.aspectRatio,
               hasInputImage: false,
-              generationConfig: storyErrorConfig,
+              generationConfig: storyGenerationConfig,
             },
             {
               success: false,
@@ -1076,14 +1143,54 @@ export class ImageGenerator {
 
       // Use REST API for editing
       const resolution = request.resolution || ImageGenerator.DEFAULT_RESOLUTION;
-      const response = await this.callGeminiRestApi(
-        request.prompt,
-        resolution,
-        request.aspectRatio,
-        imageBase64,
-        mimeType,
-        request.seed,
-      );
+      const editGenerationConfig: Record<string, unknown> = {
+        responseModalities: ['Image'],
+      };
+      const isGemini3Edit = this.modelName.includes('gemini-3');
+      if (request.aspectRatio || (isGemini3Edit && resolution)) {
+        const imageConfig: Record<string, unknown> = {};
+        if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
+        if (isGemini3Edit && resolution) imageConfig.imageSize = resolution;
+        editGenerationConfig.imageConfig = imageConfig;
+      }
+      if (request.seed !== undefined) {
+        editGenerationConfig.seed = request.seed;
+      }
+
+      let response: GeminiResponse;
+      try {
+        response = await this.callGeminiRestApi(
+          request.prompt,
+          resolution,
+          request.aspectRatio,
+          imageBase64,
+          mimeType,
+          request.seed,
+        );
+      } catch (error: unknown) {
+        const errorMessage = this.handleApiError(error);
+        this.logRetry(
+          request.mode as 'edit' | 'restore',
+          request as unknown as Record<string, unknown>,
+          {
+            model: this.modelName,
+            prompt: request.prompt,
+            resolution,
+            aspectRatio: request.aspectRatio,
+            hasInputImage: true,
+            generationConfig: editGenerationConfig,
+          },
+          errorMessage,
+        );
+        response = await this.callGeminiRestApi(
+          request.prompt,
+          resolution,
+          request.aspectRatio,
+          imageBase64,
+          mimeType,
+          request.seed,
+        );
+      }
 
       this.debug('DEBUG - Edit API Response received');
 
@@ -1124,19 +1231,6 @@ export class ImageGenerator {
 
             // Calculate image file size and log
             const fileStats = fs.statSync(fullPath);
-            const editGenerationConfig: Record<string, unknown> = {
-              responseModalities: ['Image'],
-            };
-            const isGemini3Edit = this.modelName.includes('gemini-3');
-            if (request.aspectRatio || (isGemini3Edit && resolution)) {
-              const imageConfig: Record<string, unknown> = {};
-              if (request.aspectRatio) imageConfig.aspectRatio = request.aspectRatio;
-              if (isGemini3Edit && resolution) imageConfig.imageSize = resolution;
-              editGenerationConfig.imageConfig = imageConfig;
-            }
-            if (request.seed !== undefined) {
-              editGenerationConfig.seed = request.seed;
-            }
             const logEntry = Logger.createLogEntry(
               request.mode as 'edit' | 'restore',
               request as unknown as Record<string, unknown>,
