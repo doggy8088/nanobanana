@@ -16,10 +16,14 @@
   },
   "dependencies": {
     "@google/genai": "^1.17.0",
-    "@modelcontextprotocol/sdk": "^1.0.0"
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "jpeg-js": "^0.4.4",
+    "pngjs": "^7.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@types/jpeg-js": "^0.3.7",
+    "@types/pngjs": "^6.0.5",
     "typescript": "^5.0.0"
   },
   "engines": {

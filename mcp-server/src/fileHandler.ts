@@ -184,6 +184,16 @@ export class FileHandler {
     return fullPath;
   }
 
+  static async saveImageBuffer(
+    buffer: Buffer,
+    outputPath: string,
+    filename: string,
+  ): Promise<string> {
+    const fullPath = path.join(outputPath, filename);
+    await fs.promises.writeFile(fullPath, buffer);
+    return fullPath;
+  }
+
   static async readImageAsBase64(filePath: string): Promise<string> {
     const buffer = await fs.promises.readFile(filePath);
     return buffer.toString('base64');

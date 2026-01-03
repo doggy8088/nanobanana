@@ -15,7 +15,10 @@ import {
 } from './types.js';
 import { exec } from 'child_process';
 import * as fs from 'fs';
+import * as path from 'path';
 import { promisify } from 'util';
+import jpeg from 'jpeg-js';
+import { PNG } from 'pngjs';
 
 const execAsync = promisify(exec);
 
@@ -64,6 +67,126 @@ export class ImageGenerator {
   private debug(...args: unknown[]): void {
     if (process.env.NANOBANANA_DEBUG) {
       console.error(...args);
+    }
+  }
+
+  private getFormatFromMimeType(
+    mimeType?: string,
+  ): 'png' | 'jpeg' | undefined {
+    if (!mimeType) return undefined;
+    const normalized = mimeType.toLowerCase().split(';')[0]?.trim();
+    if (normalized === 'image/png') return 'png';
+    if (normalized === 'image/jpeg' || normalized === 'image/jpg') return 'jpeg';
+    return undefined;
+  }
+
+  private getTargetFormatFromFilename(
+    filename: string,
+  ): 'png' | 'jpeg' | undefined {
+    const ext = path.extname(filename).toLowerCase();
+    if (ext === '.png') return 'png';
+    if (ext === '.jpg' || ext === '.jpeg') return 'jpeg';
+    return undefined;
+  }
+
+  private detectFormatFromBuffer(buffer: Buffer): 'png' | 'jpeg' | undefined {
+    if (
+      buffer.length >= 3 &&
+      buffer[0] === 0xff &&
+      buffer[1] === 0xd8 &&
+      buffer[2] === 0xff
+    ) {
+      return 'jpeg';
+    }
+
+    if (
+      buffer.length >= 8 &&
+      buffer[0] === 0x89 &&
+      buffer[1] === 0x50 &&
+      buffer[2] === 0x4e &&
+      buffer[3] === 0x47 &&
+      buffer[4] === 0x0d &&
+      buffer[5] === 0x0a &&
+      buffer[6] === 0x1a &&
+      buffer[7] === 0x0a
+    ) {
+      return 'png';
+    }
+
+    return undefined;
+  }
+
+  private convertImageBufferFormat(
+    buffer: Buffer,
+    from: 'png' | 'jpeg',
+    to: 'png' | 'jpeg',
+  ): Buffer {
+    if (from === to) return buffer;
+
+    if (from === 'jpeg' && to === 'png') {
+      const decoded = jpeg.decode(buffer, { useTArray: true });
+      if (!decoded || !decoded.data) {
+        throw new Error('Failed to decode JPEG image');
+      }
+
+      const png = new PNG({ width: decoded.width, height: decoded.height });
+      png.data = Buffer.from(decoded.data);
+      return PNG.sync.write(png);
+    }
+
+    if (from === 'png' && to === 'jpeg') {
+      const decoded = PNG.sync.read(buffer);
+      const rgba = decoded.data;
+      const flattened = Buffer.alloc(rgba.length);
+
+      for (let i = 0; i < rgba.length; i += 4) {
+        const alpha = rgba[i + 3] / 255;
+        flattened[i] = Math.round(rgba[i] * alpha + 255 * (1 - alpha));
+        flattened[i + 1] = Math.round(rgba[i + 1] * alpha + 255 * (1 - alpha));
+        flattened[i + 2] = Math.round(rgba[i + 2] * alpha + 255 * (1 - alpha));
+        flattened[i + 3] = 0xff;
+      }
+
+      const encoded = jpeg.encode(
+        { data: flattened, width: decoded.width, height: decoded.height },
+        92,
+      );
+      return encoded.data;
+    }
+
+    throw new Error(`Unsupported conversion from ${from} to ${to}`);
+  }
+
+  private ensureTargetImageFormat(
+    buffer: Buffer,
+    sourceMimeType: string | undefined,
+    targetFormat: 'png' | 'jpeg' | undefined,
+  ): Buffer {
+    if (!targetFormat) return buffer;
+
+    const formatFromMime = this.getFormatFromMimeType(sourceMimeType);
+    const formatFromMagic = this.detectFormatFromBuffer(buffer);
+    const sourceFormat = formatFromMagic ?? formatFromMime;
+
+    if (formatFromMime && formatFromMagic && formatFromMime !== formatFromMagic) {
+      this.debug('DEBUG - Image mimeType disagrees with magic bytes:', {
+        mimeType: sourceMimeType,
+        fromMime: formatFromMime,
+        fromMagic: formatFromMagic,
+      });
+    }
+
+    if (!sourceFormat || sourceFormat === targetFormat) return buffer;
+
+    try {
+      return this.convertImageBufferFormat(buffer, sourceFormat, targetFormat);
+    } catch (error: unknown) {
+      this.debug('DEBUG - Failed to convert image format, saving original:', {
+        from: sourceFormat,
+        to: targetFormat,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return buffer;
     }
   }
 
@@ -488,14 +611,21 @@ export class ImageGenerator {
               request.styles || request.variations
                 ? currentPrompt
                 : request.prompt,
-              request.fileFormat,
+              request.fileFormat ?? 'jpeg',
               index,
               request.filename,
               forceSuffix,
               filenameSuffix,
             );
-            const fullPath = await FileHandler.saveImageFromBase64(
-              imageBase64,
+            const inputBuffer = Buffer.from(imageBase64, 'base64');
+            const targetFormat = this.getTargetFormatFromFilename(filename);
+            const outputBuffer = this.ensureTargetImageFormat(
+              inputBuffer,
+              part.inlineData?.mimeType,
+              targetFormat,
+            );
+            const fullPath = await FileHandler.saveImageBuffer(
+              outputBuffer,
               outputPath,
               filename,
             );
@@ -950,8 +1080,15 @@ export class ImageGenerator {
                   request.filename,
                   forceSuffix,
                 );
-                const fullPath = await FileHandler.saveImageFromBase64(
-                  imageBase64,
+                const inputBuffer = Buffer.from(imageBase64, 'base64');
+                const targetFormat = this.getTargetFormatFromFilename(filename);
+                const outputBuffer = this.ensureTargetImageFormat(
+                  inputBuffer,
+                  part.inlineData?.mimeType,
+                  targetFormat,
+                );
+                const fullPath = await FileHandler.saveImageBuffer(
+                  outputBuffer,
                   outputPath,
                   filename,
                 );
@@ -1204,8 +1341,15 @@ export class ImageGenerator {
               0,
               request.filename,
             );
-            const fullPath = await FileHandler.saveImageFromBase64(
-              resultImageBase64,
+            const inputBuffer = Buffer.from(resultImageBase64, 'base64');
+            const targetFormat = this.getTargetFormatFromFilename(filename);
+            const outputBuffer = this.ensureTargetImageFormat(
+              inputBuffer,
+              part.inlineData?.mimeType,
+              targetFormat,
+            );
+            const fullPath = await FileHandler.saveImageBuffer(
+              outputBuffer,
               outputPath,
               filename,
             );
