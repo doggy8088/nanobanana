@@ -12,7 +12,7 @@
     "dev": "tsc --watch",
     "prepare": "npm run build",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"No tests specified\" && exit 0"
+    "test": "node -e \"require('fs').rmSync('dist-test',{recursive:true,force:true})\" && tsc -p tsconfig.test.json && node --test dist-test/tests/*.test.js"
   },
   "dependencies": {
     "@google/genai": "^1.17.0",

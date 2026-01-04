@@ -2,3 +2,4 @@ dist/
 node_modules/
 nanobanana-output/
 mcp-server/logs/
+mcp-server/dist-test/

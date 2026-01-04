@@ -14,6 +14,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { ImageGenerator } from './imageGenerator.js';
+import { processIconFile } from './iconProcessor.js';
 import {
   ImageGenerationRequest,
   IconPromptArgs,
@@ -676,6 +677,12 @@ class NanoBananaServer {
 
           case 'generate_icon': {
             const iconSizes = args?.sizes as number[] | undefined;
+            const background = (args?.background as string | undefined) ?? 'transparent';
+            const transparentBackground = background === 'transparent';
+            const requestedFormat = (args?.format as 'png' | 'jpeg') || 'png';
+            const outputFormat: 'png' | 'jpeg' = transparentBackground
+              ? 'png'
+              : requestedFormat;
             const iconFilenameSuffixes =
               args?.filename && iconSizes?.length
                 ? iconSizes.map((size) => String(size))
@@ -685,7 +692,8 @@ class NanoBananaServer {
               referenceImages: args?.files as string[],
               outputCount: iconSizes?.length || 1,
               mode: 'generate',
-              fileFormat: (args?.format as 'png' | 'jpeg') || 'png',
+              fileFormat: outputFormat,
+              aspectRatio: '1:1',
               filename: args?.filename as string,
               filenameSuffixes: iconFilenameSuffixes,
               resolution: (args?.resolution as '1K' | '2K' | '4K') || '1K',
@@ -697,6 +705,27 @@ class NanoBananaServer {
             };
             response =
               await this.imageGenerator.generateTextToImage(iconRequest);
+
+            if (response.success && response.generatedFiles?.length) {
+              const originalFiles = [...response.generatedFiles];
+              const targetSizes =
+                iconSizes && iconSizes.length > 0 ? iconSizes : [1024];
+              const processedFiles: string[] = [];
+              for (let i = 0; i < originalFiles.length; i++) {
+                const inputPath = originalFiles[i]!;
+                const targetSize = targetSizes[i] ?? targetSizes[0]!;
+                const outputPath = await processIconFile(inputPath, {
+                  size: targetSize,
+                  transparentBackground,
+                  outputFormat,
+                  overwrite: false,
+                });
+                processedFiles.push(outputPath);
+              }
+              response.generatedFiles = [...originalFiles, ...processedFiles];
+              response.message +=
+                ' (original images first, then cropped/resized icon outputs)';
+            }
             break;
           }
 
