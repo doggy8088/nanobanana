@@ -1,6 +1,6 @@
 {
   "name": "nanobanana-extension",
-  "version": "1.0.21",
+  "version": "1.0.22",
   "type": "module",
   "description": "Gemini CLI extension for Nano Banana models",
   "scripts": {
