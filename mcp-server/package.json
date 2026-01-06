@@ -1,6 +1,6 @@
 {
   "name": "@willh/nano-banana-mcp",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "type": "module",
   "description": "MCP server for Nano Banana extension",
   "main": "dist/index.js",
@@ -27,7 +27,7 @@
   "scripts": {
     "build": "bun run build:bundle",
     "build:tsc": "tsc",
-    "build:bundle": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && bun build src/index.ts --outdir dist --target node --minify && node -e \"const fs=require('fs');const f='dist/index.js';const c=fs.readFileSync(f,'utf8');fs.writeFileSync(f,'#!/usr/bin/env node\\n'+c)\"",
+    "build:bundle": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && bun build src/index.ts --outdir dist --target node --minify",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
     "prepare": "npm run build",
