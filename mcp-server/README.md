@@ -51,7 +51,7 @@ export NANOBANANA_MODEL=gemini-3-pro-image-preview
 ```json
 {
   "mcpServers": {
-    "nano-banana": {
+    "nanobanana": {
       "command": "npx",
       "args": ["-y", "@willh/nano-banana-mcp"],
       "env": {
@@ -69,7 +69,7 @@ export NANOBANANA_MODEL=gemini-3-pro-image-preview
 ```json
 {
   "servers": {
-    "nano-banana": {
+    "nanobanana": {
       "command": "npx",
       "args": ["-y", "@willh/nano-banana-mcp"],
       "env": {
@@ -94,7 +94,7 @@ export NANOBANANA_MODEL=gemini-3-pro-image-preview
 {
   "chat.mcp.discovery.enabled": true,
   "mcp.servers": {
-    "nano-banana": {
+    "nanobanana": {
       "command": "npx",
       "args": ["-y", "@willh/nano-banana-mcp"],
       "env": {
@@ -108,7 +108,7 @@ export NANOBANANA_MODEL=gemini-3-pro-image-preview
 命令列安裝：
 
 ```bash
-code --add-mcp "{\"name\":\"nano-banana\",\"command\":\"npx\",\"args\":[\"-y\",\"@willh/nano-banana-mcp\"],\"env\":{\"NANOBANANA_GEMINI_API_KEY\":\"your-api-key\"}}"
+code --add-mcp "{\"name\":\"nanobanana\",\"command\":\"npx\",\"args\":[\"-y\",\"@willh/nano-banana-mcp\"],\"env\":{\"NANOBANANA_GEMINI_API_KEY\":\"your-api-key\"}}"
 ```
 
 ### Codex CLI
@@ -116,18 +116,18 @@ code --add-mcp "{\"name\":\"nano-banana\",\"command\":\"npx\",\"args\":[\"-y\",\
 設定檔位置：`~/.codex/config.toml`
 
 ```toml
-[mcp_servers.nano-banana]
+[mcp_servers.nanobanana]
 command = "npx"
 args = ["-y", "@willh/nano-banana-mcp"]
 
-[mcp_servers.nano-banana.env]
+[mcp_servers.nanobanana.env]
 NANOBANANA_GEMINI_API_KEY = "your-api-key"
 ```
 
 命令列安裝：
 
 ```bash
-codex mcp add nano-banana --env NANOBANANA_GEMINI_API_KEY=your-api-key -- npx -y @willh/nano-banana-mcp
+codex mcp add nanobanana --env NANOBANANA_GEMINI_API_KEY=your-api-key -- npx -y @willh/nano-banana-mcp
 ```
 
 ### Claude Code
@@ -135,7 +135,7 @@ codex mcp add nano-banana --env NANOBANANA_GEMINI_API_KEY=your-api-key -- npx -y
 命令列安裝：
 
 ```bash
-claude mcp add nano-banana --env NANOBANANA_GEMINI_API_KEY=your-api-key -- npx -y @willh/nano-banana-mcp
+claude mcp add nanobanana --env NANOBANANA_GEMINI_API_KEY=your-api-key -- npx -y @willh/nano-banana-mcp
 ```
 
 或直接編輯設定檔 `~/.claude/settings.json`：
@@ -143,7 +143,7 @@ claude mcp add nano-banana --env NANOBANANA_GEMINI_API_KEY=your-api-key -- npx -
 ```json
 {
   "mcpServers": {
-    "nano-banana": {
+    "nanobanana": {
       "command": "npx",
       "args": ["-y", "@willh/nano-banana-mcp"],
       "env": {
@@ -161,7 +161,7 @@ claude mcp add nano-banana --env NANOBANANA_GEMINI_API_KEY=your-api-key -- npx -
 ```json
 {
   "mcpServers": {
-    "nano-banana": {
+    "nanobanana": {
       "command": "npx",
       "args": ["-y", "@willh/nano-banana-mcp"],
       "env": {
@@ -179,7 +179,7 @@ claude mcp add nano-banana --env NANOBANANA_GEMINI_API_KEY=your-api-key -- npx -
 ```json
 {
   "mcpServers": {
-    "nano-banana": {
+    "nanobanana": {
       "command": "npx",
       "args": ["-y", "@willh/nano-banana-mcp"],
       "env": {
