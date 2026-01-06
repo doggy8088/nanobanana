@@ -1,7 +1,5 @@
 > [!NOTE]
 > 此擴充套件（v1.0.10+）現在已支援 Nano Banana Pro（`gemini-3-pro-image-preview`）與 Nano Banana 2（`gemini-3.1-flash-image-preview`）！
->
-> 將 `NANOBANANA_MODEL` 環境變數預設為 `gemini-3.1-flash-image-preview`，你可以調整設定為 `gemini-3-pro-image-preview` 或 `gemini-2.5-flash-image` 即可使用。
 
 # Nano Banana - Gemini CLI 擴充套件
 
@@ -514,10 +512,10 @@ cd mcp-server && npm run dev
 
 1. **「Command not recognized」**：確認擴充套件位於 `~/.gemini/extensions/nanobanana-extension/`，並已重新啟動 Gemini CLI
 
-2. **「No API key found」**：請設定 `GEMINI_API_KEY` 環境變數：
+2. **「No API key found」**：請設定 `NANOBANANA_API_KEY` 環境變數：
 
    ```bash
-   export GEMINI_API_KEY="your-api-key-here"
+   export NANOBANANA_API_KEY="your-api-key-here"
    ```
 
 3. **「Build failed」**：確認已安裝 Node.js 18+，並執行：

@@ -46,7 +46,7 @@ test('gemini-3.1-flash-image-preview supports 512 resolution and new aspect rati
       );
     };
 
-    const generator = new ImageGenerator({ apiKey: 'test-key', keyType: 'GEMINI_API_KEY' });
+    const generator = new ImageGenerator({ apiKey: 'test-key' });
     const response = await generator.generateTextToImage({
       prompt: 'test image',
       mode: 'generate',
@@ -112,7 +112,7 @@ test('default resolution is 1K when resolution is omitted', async () => {
       );
     };
 
-    const generator = new ImageGenerator({ apiKey: 'test-key', keyType: 'GEMINI_API_KEY' });
+    const generator = new ImageGenerator({ apiKey: 'test-key' });
     const response = await generator.generateTextToImage({
       prompt: 'test image',
       mode: 'generate',
@@ -150,7 +150,7 @@ test('512 resolution is rejected for gemini-3-pro-image-preview', async () => {
       throw new Error('fetch should not be called');
     };
 
-    const generator = new ImageGenerator({ apiKey: 'test-key', keyType: 'GEMINI_API_KEY' });
+    const generator = new ImageGenerator({ apiKey: 'test-key' });
     const response = await generator.generateTextToImage({
       prompt: 'test image',
       mode: 'generate',
@@ -172,5 +172,62 @@ test('512 resolution is rejected for gemini-3-pro-image-preview', async () => {
     }
     global.fetch = originalFetch;
     await fs.promises.rm(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('validateAuthentication only accepts NANOBANANA_API_KEY', () => {
+  const originalNanoBananaKey = process.env.NANOBANANA_API_KEY;
+  const originalGeminiKey = process.env.GEMINI_API_KEY;
+  const originalGoogleKey = process.env.GOOGLE_API_KEY;
+  const originalNanoBananaGeminiKey = process.env.NANOBANANA_GEMINI_API_KEY;
+  const originalNanoBananaGoogleKey = process.env.NANOBANANA_GOOGLE_API_KEY;
+
+  try {
+    process.env.NANOBANANA_API_KEY = 'primary-key';
+    process.env.GEMINI_API_KEY = 'legacy-gemini-key';
+    process.env.GOOGLE_API_KEY = 'legacy-google-key';
+    process.env.NANOBANANA_GEMINI_API_KEY = 'legacy-prefixed-gemini-key';
+    process.env.NANOBANANA_GOOGLE_API_KEY = 'legacy-prefixed-google-key';
+
+    assert.deepEqual(ImageGenerator.validateAuthentication(), {
+      apiKey: 'primary-key',
+    });
+
+    delete process.env.NANOBANANA_API_KEY;
+
+    assert.throws(
+      () => ImageGenerator.validateAuthentication(),
+      /Please set NANOBANANA_API_KEY environment variable/,
+    );
+  } finally {
+    if (originalNanoBananaKey === undefined) {
+      delete process.env.NANOBANANA_API_KEY;
+    } else {
+      process.env.NANOBANANA_API_KEY = originalNanoBananaKey;
+    }
+
+    if (originalGeminiKey === undefined) {
+      delete process.env.GEMINI_API_KEY;
+    } else {
+      process.env.GEMINI_API_KEY = originalGeminiKey;
+    }
+
+    if (originalGoogleKey === undefined) {
+      delete process.env.GOOGLE_API_KEY;
+    } else {
+      process.env.GOOGLE_API_KEY = originalGoogleKey;
+    }
+
+    if (originalNanoBananaGeminiKey === undefined) {
+      delete process.env.NANOBANANA_GEMINI_API_KEY;
+    } else {
+      process.env.NANOBANANA_GEMINI_API_KEY = originalNanoBananaGeminiKey;
+    }
+
+    if (originalNanoBananaGoogleKey === undefined) {
+      delete process.env.NANOBANANA_GOOGLE_API_KEY;
+    } else {
+      process.env.NANOBANANA_GOOGLE_API_KEY = originalNanoBananaGoogleKey;
+    }
   }
 });
