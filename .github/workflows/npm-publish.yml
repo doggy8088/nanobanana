@@ -1,0 +1,88 @@
+name: Publish to npm
+
+on:
+  push:
+    branches:
+      - 4k
+    paths:
+      - 'mcp-server/package.json'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      should-publish: ${{ steps.version-check.outputs.should-publish }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if version changed
+        id: version-check
+        run: |
+          # For manual dispatch, always publish
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual dispatch - will publish"
+            echo "should-publish=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Get current version
+          CURRENT_VERSION=$(node -p "require('./mcp-server/package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+
+          # Get previous version from the commit before
+          if git show HEAD~1:mcp-server/package.json > /tmp/prev-package.json 2>/dev/null; then
+            PREVIOUS_VERSION=$(node -p "require('/tmp/prev-package.json').version")
+            echo "Previous version: $PREVIOUS_VERSION"
+          else
+            echo "No previous package.json found - skipping publish"
+            echo "should-publish=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if version changed
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+            echo "Version changed from $PREVIOUS_VERSION to $CURRENT_VERSION"
+            echo "should-publish=true" >> $GITHUB_OUTPUT
+          else
+            echo "Version unchanged - skipping publish"
+            echo "should-publish=false" >> $GITHUB_OUTPUT
+          fi
+
+  publish:
+    needs: check-version
+    if: needs.check-version.outputs.should-publish == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.1.42'
+
+      - name: Install MCP server dependencies
+        working-directory: mcp-server
+        run: npm ci
+
+      - name: Build MCP server
+        working-directory: mcp-server
+        run: npm run build
+
+      - name: Publish to npm
+        working-directory: mcp-server
+        run: npm publish --provenance
