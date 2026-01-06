@@ -1,0 +1,66 @@
+# @willh/nano-banana-mcp
+
+MCP server for Nano Banana - 使用 Gemini 進行圖片生成與編修的 MCP 伺服器。
+
+## 安裝與使用
+
+```bash
+npx @willh/nano-banana-mcp
+```
+
+## 環境變數設定
+
+需設定下列任一 API Key 環境變數：
+
+- `NANOBANANA_GEMINI_API_KEY`（建議）
+- `NANOBANANA_GOOGLE_API_KEY`
+- `GEMINI_API_KEY`（備援）
+- `GOOGLE_API_KEY`（備援）
+
+### 模型選擇
+
+預設使用 `gemini-2.5-flash-image`。若要使用 Gemini 3 Pro：
+
+```bash
+export NANOBANANA_MODEL=gemini-3-pro-image-preview
+```
+
+## MCP 工具
+
+此 MCP server 提供以下工具：
+
+| 工具 | 說明 |
+|------|------|
+| `generate_image` | 文字轉圖片生成（支援風格/變化選項） |
+| `edit_image` | 圖片編修 |
+| `restore_image` | 圖片修復 |
+| `generate_icon` | 生成多尺寸 App 圖示、Favicon、UI 元件 |
+| `generate_pattern` | 生成無縫拼接圖樣與材質 |
+| `generate_story` | 生成視覺故事或流程序列圖 |
+| `generate_diagram` | 生成技術圖表、流程圖、架構示意 |
+
+## 搭配 Claude Desktop 使用
+
+在 `claude_desktop_config.json` 中加入：
+
+```json
+{
+  "mcpServers": {
+    "nano-banana": {
+      "command": "npx",
+      "args": ["-y", "@willh/nano-banana-mcp"],
+      "env": {
+        "NANOBANANA_GEMINI_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+## 搭配 Gemini CLI 使用
+
+此套件也是 [Nano Banana Gemini CLI 擴充套件](https://github.com/doggy8088/nanobanana) 的一部分。
+
+## 授權
+
+Apache-2.0
