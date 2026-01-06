@@ -39,9 +39,142 @@ export NANOBANANA_MODEL=gemini-3-pro-image-preview
 | `generate_story` | 生成視覺故事或流程序列圖 |
 | `generate_diagram` | 生成技術圖表、流程圖、架構示意 |
 
-## 搭配 Claude Desktop 使用
+## MCP 設定範例
 
-在 `claude_desktop_config.json` 中加入：
+### Claude Desktop
+
+設定檔位置：
+
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "nano-banana": {
+      "command": "npx",
+      "args": ["-y", "@willh/nano-banana-mcp"],
+      "env": {
+        "NANOBANANA_GEMINI_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+### GitHub Copilot Chat (VS Code)
+
+在專案根目錄建立 `.vscode/mcp.json`：
+
+```json
+{
+  "servers": {
+    "nano-banana": {
+      "command": "npx",
+      "args": ["-y", "@willh/nano-banana-mcp"],
+      "env": {
+        "NANOBANANA_GEMINI_API_KEY": "${input:nanobanana-api-key}"
+      }
+    }
+  },
+  "inputs": [
+    {
+      "id": "nanobanana-api-key",
+      "type": "promptString",
+      "description": "Enter your Gemini API key",
+      "password": true
+    }
+  ]
+}
+```
+
+或透過 VS Code 設定檔 `settings.json`：
+
+```json
+{
+  "chat.mcp.discovery.enabled": true,
+  "mcp.servers": {
+    "nano-banana": {
+      "command": "npx",
+      "args": ["-y", "@willh/nano-banana-mcp"],
+      "env": {
+        "NANOBANANA_GEMINI_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+命令列安裝：
+
+```bash
+code --add-mcp "{\"name\":\"nano-banana\",\"command\":\"npx\",\"args\":[\"-y\",\"@willh/nano-banana-mcp\"],\"env\":{\"NANOBANANA_GEMINI_API_KEY\":\"your-api-key\"}}"
+```
+
+### Codex CLI
+
+設定檔位置：`~/.codex/config.toml`
+
+```toml
+[mcp_servers.nano-banana]
+command = "npx"
+args = ["-y", "@willh/nano-banana-mcp"]
+
+[mcp_servers.nano-banana.env]
+NANOBANANA_GEMINI_API_KEY = "your-api-key"
+```
+
+命令列安裝：
+
+```bash
+codex mcp add nano-banana --env NANOBANANA_GEMINI_API_KEY=your-api-key -- npx -y @willh/nano-banana-mcp
+```
+
+### Claude Code
+
+命令列安裝：
+
+```bash
+claude mcp add nano-banana --env NANOBANANA_GEMINI_API_KEY=your-api-key -- npx -y @willh/nano-banana-mcp
+```
+
+或直接編輯設定檔 `~/.claude/settings.json`：
+
+```json
+{
+  "mcpServers": {
+    "nano-banana": {
+      "command": "npx",
+      "args": ["-y", "@willh/nano-banana-mcp"],
+      "env": {
+        "NANOBANANA_GEMINI_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+### Cursor
+
+在專案根目錄建立 `.cursor/mcp.json`：
+
+```json
+{
+  "mcpServers": {
+    "nano-banana": {
+      "command": "npx",
+      "args": ["-y", "@willh/nano-banana-mcp"],
+      "env": {
+        "NANOBANANA_GEMINI_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+### Windsurf
+
+設定檔位置：`~/.codeium/windsurf/mcp_config.json`
 
 ```json
 {
