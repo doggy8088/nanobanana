@@ -100,3 +100,5 @@ jobs:
           draft: false
           prerelease: false
           artifacts: nanobanana-release.tar.gz
+          allowUpdates: true
+          removeArtifacts: true
