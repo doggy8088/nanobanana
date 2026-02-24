@@ -616,6 +616,7 @@ export class ImageGenerator {
               request.filename,
               forceSuffix,
               filenameSuffix,
+              request.outputDir,
             );
             const inputBuffer = Buffer.from(imageBase64, 'base64');
             const targetFormat = this.getTargetFormatFromFilename(filename);
@@ -711,13 +712,11 @@ export class ImageGenerator {
     request: ImageGenerationRequest,
   ): Promise<ImageGenerationResponse> {
     try {
-      const outputPath = FileHandler.ensureOutputDirectory();
+      const outputPath = FileHandler.ensureOutputDirectory(request.outputDir);
       const generatedFiles: string[] = [];
       const prompts = this.buildBatchPrompts(request);
       const forceSuffix = Boolean(request.filename) && prompts.length > 1;
       let firstError: string | null = null;
-
-      // Process reference images if provided
       let referenceImagesData: Array<{ data: string; mimeType: string }> | undefined;
       if (request.referenceImages && request.referenceImages.length > 0) {
         if (request.referenceImages.length > 14) {
@@ -910,7 +909,7 @@ export class ImageGenerator {
     args?: StorySequenceArgs,
   ): Promise<ImageGenerationResponse> {
     try {
-      const outputPath = FileHandler.ensureOutputDirectory();
+      const outputPath = FileHandler.ensureOutputDirectory(request.outputDir);
       const steps = request.outputCount || 4;
       const type = args?.type || 'story';
       const style = args?.style || 'consistent';
@@ -1079,6 +1078,8 @@ export class ImageGenerator {
                   filenameIndex,
                   request.filename,
                   forceSuffix,
+                  undefined,
+                  request.outputDir,
                 );
                 const inputBuffer = Buffer.from(imageBase64, 'base64');
                 const targetFormat = this.getTargetFormatFromFilename(filename);
@@ -1252,7 +1253,7 @@ export class ImageGenerator {
         };
       }
 
-      const outputPath = FileHandler.ensureOutputDirectory();
+      const outputPath = FileHandler.ensureOutputDirectory(request.outputDir);
       const imageBase64 = await FileHandler.readImageAsBase64(
         fileResult.filePath!,
       );
@@ -1340,6 +1341,9 @@ export class ImageGenerator {
               request.fileFormat || 'jpeg', // Edits default to jpg
               0,
               request.filename,
+              false,
+              undefined,
+              request.outputDir,
             );
             const inputBuffer = Buffer.from(resultImageBase64, 'base64');
             const targetFormat = this.getTargetFormatFromFilename(filename);

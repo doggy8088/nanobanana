@@ -187,6 +187,7 @@ gemini extensions install https://github.com/doggy8088/nanobanana
 **`--resolution=1K|2K|4K`** - 輸出解析度（預設：2K）
 **`--seed=123`** - 用於重現結果的隨機種子
 **`--filename="name"`** - 指定輸出檔名（多張自動加後綴）
+**`--output="path"`** - 指定自訂輸出資料夾（預設：`./nanobanana-output/`）
 **`--preview`** - 自動使用預設檢視器開啟生成圖片
 
 ### 可用風格
@@ -406,6 +407,23 @@ gemini extensions install https://github.com/doggy8088/nanobanana
 ### 輸出目錄
 
 生成圖片會儲存到 `./nanobanana-output/`（會自動建立）。
+
+### 自訂輸出資料夾
+
+使用 `--output="path"` 可指定自訂輸出資料夾，方便將圖片直接存到特定專案資料夾或雲端同步資料夾：
+
+```bash
+# 指定 Windows 路徑
+/generate "山景日落" --output="D:\AI_Images"
+
+# 指定 Google Drive 同步資料夾
+/generate "山景日落" --output="D:\Google Drive\Images"
+
+# 指定 Unix 路徑
+/generate "山景日落" --output="/home/user/pictures/AI"
+```
+
+支援所有指令：`/generate`、`/edit`、`/restore`、`/icon`、`/pattern`、`/story`、`/diagram`。
 
 ## 🛠️ 開發
 

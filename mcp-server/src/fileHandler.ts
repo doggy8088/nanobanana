@@ -19,8 +19,10 @@ export class FileHandler {
     path.join(process.env.HOME || '~', 'Desktop'),
   ];
 
-  static ensureOutputDirectory(): string {
-    const outputPath = path.join(process.cwd(), this.OUTPUT_DIR);
+  static ensureOutputDirectory(customDir?: string): string {
+    const outputPath = customDir
+      ? path.resolve(customDir)
+      : path.join(process.cwd(), this.OUTPUT_DIR);
 
     if (!fs.existsSync(outputPath)) {
       fs.mkdirSync(outputPath, { recursive: true });
@@ -64,11 +66,12 @@ export class FileHandler {
     customFilename?: string,
     forceSuffix: boolean = false,
     suffixOverride?: string | number,
+    outputDir?: string,
   ): string {
     if (!customFilename) {
       const baseName = this.derivePromptBaseName(prompt);
       const extension = format === 'jpeg' ? 'jpg' : 'png';
-      const outputPath = this.ensureOutputDirectory();
+      const outputPath = this.ensureOutputDirectory(outputDir);
       let fileName = `${baseName}.${extension}`;
       let counter = index > 0 ? index : 1;
 
@@ -80,7 +83,7 @@ export class FileHandler {
       return fileName;
     }
 
-    const outputPath = this.ensureOutputDirectory();
+    const outputPath = this.ensureOutputDirectory(outputDir);
     const { baseName, extension } = this.parseCustomFilename(
       customFilename,
       format,

@@ -31,6 +31,8 @@ export interface ImageGenerationRequest {
   // Output filename override
   filename?: string;
   filenameSuffixes?: string[];
+  // Custom output directory
+  outputDir?: string;
 }
 
 export interface ImageGenerationResponse {
