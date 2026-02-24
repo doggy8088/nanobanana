@@ -146,6 +146,11 @@ class NanoBananaServer {
                   maximum: 8,
                   default: 2,
                 },
+                outputDir: {
+                  type: 'string',
+                  description:
+                    'Custom output directory path. Defaults to ./nanobanana-output/ if not specified.',
+                },
               },
               required: ['prompt'],
             },
@@ -189,6 +194,11 @@ class NanoBananaServer {
                   minimum: 1,
                   maximum: 8,
                   default: 2,
+                },
+                outputDir: {
+                  type: 'string',
+                  description:
+                    'Custom output directory path. Defaults to ./nanobanana-output/ if not specified.',
                 },
               },
               required: ['prompt', 'file'],
@@ -234,6 +244,11 @@ class NanoBananaServer {
                   minimum: 1,
                   maximum: 8,
                   default: 2,
+                },
+                outputDir: {
+                  type: 'string',
+                  description:
+                    'Custom output directory path. Defaults to ./nanobanana-output/ if not specified.',
                 },
               },
               required: ['prompt', 'file'],
@@ -321,6 +336,11 @@ class NanoBananaServer {
                   maximum: 8,
                   default: 2,
                 },
+                outputDir: {
+                  type: 'string',
+                  description:
+                    'Custom output directory path. Defaults to ./nanobanana-output/ if not specified.',
+                },
               },
               required: ['prompt'],
             },
@@ -405,6 +425,11 @@ class NanoBananaServer {
                   minimum: 1,
                   maximum: 8,
                   default: 2,
+                },
+                outputDir: {
+                  type: 'string',
+                  description:
+                    'Custom output directory path. Defaults to ./nanobanana-output/ if not specified.',
                 },
               },
               required: ['prompt'],
@@ -492,6 +517,11 @@ class NanoBananaServer {
                   minimum: 1,
                   maximum: 8,
                   default: 2,
+                },
+                outputDir: {
+                  type: 'string',
+                  description:
+                    'Custom output directory path. Defaults to ./nanobanana-output/ if not specified.',
                 },
               },
               required: ['prompt'],
@@ -587,6 +617,11 @@ class NanoBananaServer {
                   maximum: 8,
                   default: 2,
                 },
+                outputDir: {
+                  type: 'string',
+                  description:
+                    'Custom output directory path. Defaults to ./nanobanana-output/ if not specified.',
+                },
               },
               required: ['prompt'],
             },
@@ -635,6 +670,7 @@ class NanoBananaServer {
                 (args?.['no-preview'] as boolean),
               resolution: (args?.resolution as '1K' | '2K' | '4K') || '1K',
               parallel: (args?.parallel as number | undefined) ?? 2,
+              outputDir: args?.outputDir as string | undefined,
             };
             response =
               await this.imageGenerator.generateTextToImage(imageRequest);
@@ -653,6 +689,7 @@ class NanoBananaServer {
                 (args?.noPreview as boolean) ||
                 (args?.['no-preview'] as boolean),
               parallel: (args?.parallel as number | undefined) ?? 2,
+              outputDir: args?.outputDir as string | undefined,
             };
             response = await this.imageGenerator.editImage(editRequest);
             break;
@@ -670,6 +707,7 @@ class NanoBananaServer {
                 (args?.noPreview as boolean) ||
                 (args?.['no-preview'] as boolean),
               parallel: (args?.parallel as number | undefined) ?? 2,
+              outputDir: args?.outputDir as string | undefined,
             };
             response = await this.imageGenerator.editImage(restoreRequest);
             break;
@@ -702,6 +740,7 @@ class NanoBananaServer {
                 (args?.noPreview as boolean) ||
                 (args?.['no-preview'] as boolean),
               parallel: (args?.parallel as number | undefined) ?? 2,
+              outputDir: args?.outputDir as string | undefined,
             };
             response =
               await this.imageGenerator.generateTextToImage(iconRequest);
@@ -745,6 +784,7 @@ class NanoBananaServer {
                 (args?.noPreview as boolean) ||
                 (args?.['no-preview'] as boolean),
               parallel: (args?.parallel as number | undefined) ?? 2,
+              outputDir: args?.outputDir as string | undefined,
             };
             response =
               await this.imageGenerator.generateTextToImage(patternRequest);
@@ -765,6 +805,7 @@ class NanoBananaServer {
                 (args?.noPreview as boolean) ||
                 (args?.['no-preview'] as boolean),
               parallel: (args?.parallel as number | undefined) ?? 2,
+              outputDir: args?.outputDir as string | undefined,
             };
             response = await this.imageGenerator.generateStorySequence(
               storyRequest,
@@ -786,6 +827,7 @@ class NanoBananaServer {
                 (args?.noPreview as boolean) ||
                 (args?.['no-preview'] as boolean),
               parallel: (args?.parallel as number | undefined) ?? 2,
+              outputDir: args?.outputDir as string | undefined,
             };
             response =
               await this.imageGenerator.generateTextToImage(diagramRequest);

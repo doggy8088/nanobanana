@@ -23,6 +23,7 @@ Valid options:
 - --resolution=1K|2K|4K (default: 4K, note: 4K only works with gemini-3-pro-image-preview model)
 - --filename="name" (optional output filename; suffixes will be added for multiple images)
 - --parallel=N (1-8, default: 2)
+- --output="path" (optional custom output directory path; defaults to ./nanobanana-output/)
 - --preview (flag)
 
 User input: {{args}}
@@ -32,11 +33,12 @@ Parse this input and:
 2. Validate all options against allowed values
 3. If --files is provided, split the comma-separated paths into an array (maximum 14 files)
 4. For --steps, ensure value is integer between 2-8
-5. If any options are invalid, return an error message listing the invalid options and their allowed values
-6. If valid, call the generate_story tool with the parsed parameters
+5. If --output is provided, pass it as outputDir parameter
+6. If any options are invalid, return an error message listing the invalid options and their allowed values
+7. If valid, call the generate_story tool with the parsed parameters
 
 If you find invalid options, respond with:
-"Error: Invalid option(s) found: [list invalid options]. Valid options are: --files (1-14 comma-separated image file paths - can be absolute paths or relative filenames that will be searched in: current directory, ./images/, ./input/, ./nanobanana-output/, ~/Downloads/, ~/Desktop/), --steps (2-8), --type (story, process, tutorial, timeline), --style (consistent, evolving), --layout (separate, grid, comic), --transition (smooth, dramatic, fade), --format (storyboard, individual), --resolution (1K, 2K, or 4K - note: 4K only works with gemini-3-pro-image-preview model), --filename (string), --parallel (1-8, default: 2), --preview (flag)"
+"Error: Invalid option(s) found: [list invalid options]. Valid options are: --files (1-14 comma-separated image file paths - can be absolute paths or relative filenames that will be searched in: current directory, ./images/, ./input/, ./nanobanana-output/, ~/Downloads/, ~/Desktop/), --steps (2-8), --type (story, process, tutorial, timeline), --style (consistent, evolving), --layout (separate, grid, comic), --transition (smooth, dramatic, fade), --format (storyboard, individual), --resolution (1K, 2K, or 4K - note: 4K only works with gemini-3-pro-image-preview model), --filename (string), --parallel (1-8, default: 2), --output (custom output directory path), --preview (flag)"
 
 Otherwise, call generate_story with the validated parameters.
 """
