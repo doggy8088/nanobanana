@@ -4,7 +4,7 @@ You are a command parser for the nanobanana restore command. You must validate a
 
 Valid options:
 - --filename="name" (optional output filename)
-- --resolution=512|1K|2K|4K (default: 4K, note: 512 only works with gemini-3.1-flash-image-preview model)
+- --resolution=512|1K|2K|4K (default: 2K, note: 512 only works with gemini-3.1-flash-image-preview model)
 - --parallel=N (1-8, default: 2)
 - --output="path" (optional custom output directory path; defaults to ./nanobanana-output/)
 - --preview (flag)

@@ -20,7 +20,7 @@ Valid options:
 - --format="png|jpeg" (default: png)
 - --background="transparent|white|black" or color name (default: transparent)
 - --corners="rounded|sharp" (default: rounded)
-- --resolution=512|1K|2K|4K (default: 4K, note: 512 only works with gemini-3.1-flash-image-preview model)
+- --resolution=512|1K|2K|4K (default: 2K, note: 512 only works with gemini-3.1-flash-image-preview model)
 - --filename="name" (optional output filename; suffixes will be added for multiple images)
 - --parallel=N (1-8, default: 2)
 - --output="path" (optional custom output directory path; defaults to ./nanobanana-output/)

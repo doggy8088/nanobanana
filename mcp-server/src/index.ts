@@ -135,8 +135,8 @@ class NanoBananaServer {
                   type: 'string',
                   enum: ['512', '1K', '2K', '4K'],
                   description:
-                    'Output image resolution (default: 1K)',
-                  default: '1K',
+                    'Output image resolution (default: 2K)',
+                  default: '2K',
                 },
                 parallel: {
                   type: 'number',
@@ -178,8 +178,8 @@ class NanoBananaServer {
                   type: 'string',
                   enum: ['512', '1K', '2K', '4K'],
                   description:
-                    'Output image resolution (default: 1K)',
-                  default: '1K',
+                    'Output image resolution (default: 2K)',
+                  default: '2K',
                 },
                 preview: {
                   type: 'boolean',
@@ -228,8 +228,8 @@ class NanoBananaServer {
                   type: 'string',
                   enum: ['512', '1K', '2K', '4K'],
                   description:
-                    'Output image resolution (default: 1K)',
-                  default: '1K',
+                    'Output image resolution (default: 2K)',
+                  default: '2K',
                 },
                 preview: {
                   type: 'boolean',
@@ -319,8 +319,8 @@ class NanoBananaServer {
                   type: 'string',
                   enum: ['512', '1K', '2K', '4K'],
                   description:
-                    'Output image resolution (default: 1K)',
-                  default: '1K',
+                    'Output image resolution (default: 2K)',
+                  default: '2K',
                 },
                 preview: {
                   type: 'boolean',
@@ -409,8 +409,8 @@ class NanoBananaServer {
                   type: 'string',
                   enum: ['512', '1K', '2K', '4K'],
                   description:
-                    'Output image resolution (default: 1K)',
-                  default: '1K',
+                    'Output image resolution (default: 2K)',
+                  default: '2K',
                 },
                 preview: {
                   type: 'boolean',
@@ -501,8 +501,8 @@ class NanoBananaServer {
                   type: 'string',
                   enum: ['512', '1K', '2K', '4K'],
                   description:
-                    'Output image resolution (default: 1K)',
-                  default: '1K',
+                    'Output image resolution (default: 2K)',
+                  default: '2K',
                 },
                 preview: {
                   type: 'boolean',
@@ -600,8 +600,8 @@ class NanoBananaServer {
                   type: 'string',
                   enum: ['512', '1K', '2K', '4K'],
                   description:
-                    'Output image resolution (default: 1K)',
-                  default: '1K',
+                    'Output image resolution (default: 2K)',
+                  default: '2K',
                 },
                 preview: {
                   type: 'boolean',
@@ -668,7 +668,7 @@ class NanoBananaServer {
               noPreview:
                 (args?.noPreview as boolean) ||
                 (args?.['no-preview'] as boolean),
-              resolution: (args?.resolution as '512' | '1K' | '2K' | '4K') || '1K',
+              resolution: (args?.resolution as '512' | '1K' | '2K' | '4K') || '2K',
               parallel: (args?.parallel as number | undefined) ?? 2,
               outputDir: args?.outputDir as string | undefined,
             };
@@ -683,7 +683,7 @@ class NanoBananaServer {
               inputImage: args?.file as string,
               mode: 'edit',
               filename: args?.filename as string,
-              resolution: (args?.resolution as '512' | '1K' | '2K' | '4K') || '1K',
+              resolution: (args?.resolution as '512' | '1K' | '2K' | '4K') || '2K',
               preview: args?.preview as boolean,
               noPreview:
                 (args?.noPreview as boolean) ||
@@ -701,7 +701,7 @@ class NanoBananaServer {
               inputImage: args?.file as string,
               mode: 'restore',
               filename: args?.filename as string,
-              resolution: (args?.resolution as '512' | '1K' | '2K' | '4K') || '1K',
+              resolution: (args?.resolution as '512' | '1K' | '2K' | '4K') || '2K',
               preview: args?.preview as boolean,
               noPreview:
                 (args?.noPreview as boolean) ||
@@ -734,7 +734,7 @@ class NanoBananaServer {
               aspectRatio: '1:1',
               filename: args?.filename as string,
               filenameSuffixes: iconFilenameSuffixes,
-              resolution: (args?.resolution as '512' | '1K' | '2K' | '4K') || '1K',
+              resolution: (args?.resolution as '512' | '1K' | '2K' | '4K') || '2K',
               preview: args?.preview as boolean,
               noPreview:
                 (args?.noPreview as boolean) ||
@@ -778,7 +778,7 @@ class NanoBananaServer {
               filename: args?.filename as string,
               filenameSuffixes:
                 args?.filename && patternSize ? [patternSize] : undefined,
-              resolution: (args?.resolution as '512' | '1K' | '2K' | '4K') || '1K',
+              resolution: (args?.resolution as '512' | '1K' | '2K' | '4K') || '2K',
               preview: args?.preview as boolean,
               noPreview:
                 (args?.noPreview as boolean) ||
@@ -799,7 +799,7 @@ class NanoBananaServer {
               mode: 'generate',
               variations: ['sequence-step'],
               filename: args?.filename as string,
-              resolution: (args?.resolution as '512' | '1K' | '2K' | '4K') || '1K',
+              resolution: (args?.resolution as '512' | '1K' | '2K' | '4K') || '2K',
               preview: args?.preview as boolean,
               noPreview:
                 (args?.noPreview as boolean) ||
@@ -821,7 +821,7 @@ class NanoBananaServer {
               outputCount: 1,
               mode: 'generate',
               filename: args?.filename as string,
-              resolution: (args?.resolution as '512' | '1K' | '2K' | '4K') || '1K',
+              resolution: (args?.resolution as '512' | '1K' | '2K' | '4K') || '2K',
               preview: args?.preview as boolean,
               noPreview:
                 (args?.noPreview as boolean) ||

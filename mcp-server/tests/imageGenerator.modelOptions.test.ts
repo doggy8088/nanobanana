@@ -75,6 +75,62 @@ test('gemini-3.1-flash-image-preview supports 512 resolution and new aspect rati
   }
 });
 
+test('default resolution is 2K when resolution is omitted', async () => {
+  const originalModel = process.env.NANOBANANA_MODEL;
+  const originalFetch = global.fetch;
+  const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'nb-gen-'));
+  let requestBody: Record<string, unknown> | undefined;
+
+  try {
+    process.env.NANOBANANA_MODEL = 'gemini-3.1-flash-image-preview';
+    global.fetch = async (_input, init) => {
+      requestBody = JSON.parse(String(init?.body));
+      return new Response(
+        JSON.stringify({
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: 'image/png',
+                      data: ONE_PIXEL_PNG_BASE64,
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
+    };
+
+    const generator = new ImageGenerator({ apiKey: 'test-key', keyType: 'GEMINI_API_KEY' });
+    const response = await generator.generateTextToImage({
+      prompt: 'test image',
+      mode: 'generate',
+      outputDir: tmpDir,
+      fileFormat: 'png',
+    });
+
+    assert.equal(response.success, true);
+    assert.equal(
+      (requestBody?.generationConfig as { imageConfig?: { imageSize?: string } })
+        ?.imageConfig?.imageSize,
+      '2K',
+    );
+  } finally {
+    if (originalModel === undefined) {
+      delete process.env.NANOBANANA_MODEL;
+    } else {
+      process.env.NANOBANANA_MODEL = originalModel;
+    }
+    global.fetch = originalFetch;
+    await fs.promises.rm(tmpDir, { recursive: true, force: true });
+  }
+});
+
 test('512 resolution is rejected for gemini-3-pro-image-preview', async () => {
   const originalModel = process.env.NANOBANANA_MODEL;
   const originalFetch = global.fetch;

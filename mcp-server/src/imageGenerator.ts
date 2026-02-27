@@ -50,7 +50,7 @@ export class ImageGenerator {
   private apiKey: string;
   private modelName: string;
   private static readonly DEFAULT_MODEL = 'gemini-2.5-flash-image';
-  private static readonly DEFAULT_RESOLUTION: ImageResolution = '1K';
+  private static readonly DEFAULT_RESOLUTION: ImageResolution = '2K';
   private static readonly DEFAULT_PARALLEL = 2;
   private static readonly API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 

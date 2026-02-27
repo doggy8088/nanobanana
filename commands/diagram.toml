@@ -20,7 +20,7 @@ Valid options:
 - --complexity="simple|detailed|comprehensive" (default: detailed)
 - --colors="mono|accent|categorical" (default: accent)
 - --annotations="minimal|detailed" (default: detailed)
-- --resolution=512|1K|2K|4K (default: 4K, note: 512 only works with gemini-3.1-flash-image-preview model)
+- --resolution=512|1K|2K|4K (default: 2K, note: 512 only works with gemini-3.1-flash-image-preview model)
 - --filename="name" (optional output filename)
 - --parallel=N (1-8, default: 2)
 - --output="path" (optional custom output directory path; defaults to ./nanobanana-output/)
