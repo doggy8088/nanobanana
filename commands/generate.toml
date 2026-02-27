@@ -18,8 +18,8 @@ Valid options:
 - --styles="style1,style2" (photorealistic, watercolor, oil-painting, sketch, pixel-art, anime, vintage, modern, abstract, minimalist)
 - --variations="var1,var2" (lighting, angle, color-palette, composition, mood, season, time-of-day)
 - --format=grid|separate (default: separate)
-- --resolution=1K|2K|4K (default: 2K, note: 4K only works with gemini-3-pro-image-preview model)
-- --aspect-ratio=1:1|2:3|3:2|3:4|4:3|4:5|5:4|9:16|16:9|21:9 (default: 1:1)
+- --resolution=512|1K|2K|4K (default: 2K, note: 512 only works with gemini-3.1-flash-image-preview model; 4K works with gemini-3.* models)
+- --aspect-ratio=1:1|2:3|3:2|3:4|4:3|4:5|5:4|9:16|16:9|21:9|1:4|4:1|1:8|8:1 (default: 1:1)
 - --seed=123 (integer)
 - --filename="name" (optional output filename; suffixes will be added for multiple images)
 - --parallel=N (1-8, default: 2) (number of images to generate in parallel)
@@ -37,7 +37,7 @@ Parse this input and:
 6. If valid, call the generate_image tool with the parsed parameters
 
 If you find invalid options, respond with:
-"Error: Invalid option(s) found: [list invalid options]. Valid options are: --files (1-14 comma-separated image file paths - can be absolute paths or relative filenames that will be searched in: current directory, ./images/, ./input/, ./nanobanana-output/, ~/Downloads/, ~/Desktop/), --count (1-8), --styles (comma-separated list from: photorealistic, watercolor, oil-painting, sketch, pixel-art, anime, vintage, modern, abstract, minimalist), --variations (comma-separated list from: lighting, angle, color-palette, composition, mood, season, time-of-day), --format (grid or separate), --resolution (1K, 2K, or 4K - note: 4K only works with gemini-3-pro-image-preview model), --aspect-ratio (1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9), --seed (integer), --filename (string), --parallel (1-8, default: 2), --output (custom output directory path), --preview (flag)"
+"Error: Invalid option(s) found: [list invalid options]. Valid options are: --files (1-14 comma-separated image file paths - can be absolute paths or relative filenames that will be searched in: current directory, ./images/, ./input/, ./nanobanana-output/, ~/Downloads/, ~/Desktop/), --count (1-8), --styles (comma-separated list from: photorealistic, watercolor, oil-painting, sketch, pixel-art, anime, vintage, modern, abstract, minimalist), --variations (comma-separated list from: lighting, angle, color-palette, composition, mood, season, time-of-day), --format (grid or separate), --resolution (512, 1K, 2K, or 4K - note: 512 only works with gemini-3.1-flash-image-preview model), --aspect-ratio (1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9, 1:4, 4:1, 1:8, 8:1), --seed (integer), --filename (string), --parallel (1-8, default: 2), --output (custom output directory path), --preview (flag)"
 
 Otherwise, call generate_image with the validated parameters.
 """

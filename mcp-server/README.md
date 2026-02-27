@@ -19,7 +19,13 @@ npx @willh/nano-banana-mcp
 
 ### 模型選擇
 
-預設使用 `gemini-2.5-flash-image`。若要使用 Gemini 3 Pro：
+預設使用 `gemini-2.5-flash-image`。若要使用 Gemini 3 系列模型：
+
+```bash
+export NANOBANANA_MODEL=gemini-3.1-flash-image-preview
+```
+
+或：
 
 ```bash
 export NANOBANANA_MODEL=gemini-3-pro-image-preview

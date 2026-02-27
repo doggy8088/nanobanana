@@ -20,7 +20,7 @@ Valid options:
 - --density="sparse|medium|dense" (default: medium)
 - --colors="mono|duotone|colorful" (default: colorful)
 - --repeat="tile|mirror" (default: tile)
-- --resolution=1K|2K|4K (default: 4K, note: 4K only works with gemini-3-pro-image-preview model)
+- --resolution=512|1K|2K|4K (default: 4K, note: 512 only works with gemini-3.1-flash-image-preview model)
 - --filename="name" (optional output filename)
 - --parallel=N (1-8, default: 2)
 - --output="path" (optional custom output directory path; defaults to ./nanobanana-output/)
@@ -38,7 +38,7 @@ Parse this input and:
 7. If valid, call the generate_pattern tool with the parsed parameters
 
 If you find invalid options, respond with:
-"Error: Invalid option(s) found: [list invalid options]. Valid options are: --files (1-14 comma-separated image file paths - can be absolute paths or relative filenames that will be searched in: current directory, ./images/, ./input/, ./nanobanana-output/, ~/Downloads/, ~/Desktop/), --size (format: WxH, e.g., 256x256), --type (seamless, texture, wallpaper), --style (geometric, organic, abstract, floral, tech), --density (sparse, medium, dense), --colors (mono, duotone, colorful), --repeat (tile, mirror), --resolution (1K, 2K, or 4K - note: 4K only works with gemini-3-pro-image-preview model), --filename (string), --parallel (1-8, default: 2), --output (custom output directory path), --preview (flag)"
+"Error: Invalid option(s) found: [list invalid options]. Valid options are: --files (1-14 comma-separated image file paths - can be absolute paths or relative filenames that will be searched in: current directory, ./images/, ./input/, ./nanobanana-output/, ~/Downloads/, ~/Desktop/), --size (format: WxH, e.g., 256x256), --type (seamless, texture, wallpaper), --style (geometric, organic, abstract, floral, tech), --density (sparse, medium, dense), --colors (mono, duotone, colorful), --repeat (tile, mirror), --resolution (512, 1K, 2K, or 4K - note: 512 only works with gemini-3.1-flash-image-preview model), --filename (string), --parallel (1-8, default: 2), --output (custom output directory path), --preview (flag)"
 
 Otherwise, call generate_pattern with the validated parameters.
 """
