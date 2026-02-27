@@ -50,7 +50,7 @@ export class ImageGenerator {
   private apiKey: string;
   private modelName: string;
   private static readonly DEFAULT_MODEL = 'gemini-2.5-flash-image';
-  private static readonly DEFAULT_RESOLUTION: ImageResolution = '1K';
+  private static readonly DEFAULT_RESOLUTION: ImageResolution = '2K';
   private static readonly DEFAULT_PARALLEL = 2;
   private static readonly API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
@@ -67,6 +67,18 @@ export class ImageGenerator {
   private debug(...args: unknown[]): void {
     if (process.env.NANOBANANA_DEBUG) {
       console.error(...args);
+    }
+  }
+
+  private isGemini31FlashImagePreviewModel(): boolean {
+    return this.modelName === 'gemini-3.1-flash-image-preview';
+  }
+
+  private validateResolutionForModel(resolution?: ImageResolution): void {
+    if (resolution === '512' && !this.isGemini31FlashImagePreviewModel()) {
+      throw new Error(
+        'Resolution 512 is only supported by model gemini-3.1-flash-image-preview',
+      );
     }
   }
 
@@ -232,7 +244,8 @@ export class ImageGenerator {
 
     // Build generationConfig based on model
     // gemini-2.5-flash-image: only supports aspectRatio
-    // gemini-3-pro-image-preview: supports aspectRatio and imageSize (1K/2K/4K)
+    // gemini-3 models: support aspectRatio and imageSize
+    this.validateResolutionForModel(resolution);
     const isGemini3 = this.modelName.includes('gemini-3');
 
     interface ImageConfig {

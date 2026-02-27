@@ -1,7 +1,7 @@
 > [!NOTE]
-> 此擴充套件（v1.0.10+）現在已支援 Nano Banana Pro（`gemini-3-pro-image-preview`）！
+> 此擴充套件（v1.0.10+）現在已支援 Nano Banana Pro（`gemini-3-pro-image-preview`）與 Nano Banana 2（`gemini-3.1-flash-image-preview`）！
 >
-> 將 `NANOBANANA_MODEL` 環境變數設定為 `gemini-3-pro-image-preview` 即可使用。
+> 將 `NANOBANANA_MODEL` 環境變數設定為 `gemini-3-pro-image-preview` 或 `gemini-3.1-flash-image-preview` 即可使用。
 
 # Nano Banana - Gemini CLI 擴充套件
 
@@ -36,14 +36,21 @@
 
 ## 🍌 模型選擇
 
-此擴充套件支援兩種 Nano Banana 模型：
+此擴充套件支援三種 Nano Banana 模型：
 
 - `gemini-2.5-flash-image`（預設）
+- `gemini-3.1-flash-image-preview`（Nano Banana 2）
 - `gemini-3-pro-image-preview`（Nano Banana Pro）
 
 預設使用 `gemini-2.5-flash-image`。
 
-若要使用新版 Gemini 3 Pro 驅動的模型，請將 `NANOBANANA_MODEL` 環境變數設定為 `gemini-3-pro-image-preview`。
+若要使用 Gemini 3 系列驅動的模型，請將 `NANOBANANA_MODEL` 環境變數設定為 `gemini-3.1-flash-image-preview` 或 `gemini-3-pro-image-preview`。
+
+```bash
+export NANOBANANA_MODEL=gemini-3.1-flash-image-preview
+```
+
+或：
 
 ```bash
 export NANOBANANA_MODEL=gemini-3-pro-image-preview
@@ -184,7 +191,7 @@ gemini extensions install https://github.com/doggy8088/nanobanana
 **`--styles="style1,style2"`** - 以逗號分隔的藝術風格清單
 **`--variations="var1,var2"`** - 指定變化類型
 **`--format=grid|separate`** - 輸出格式（預設：separate）
-**`--resolution=1K|2K|4K`** - 輸出解析度（預設：2K）
+**`--resolution=512|1K|2K|4K`** - 輸出解析度（預設：2K，`512` 僅支援 `gemini-3.1-flash-image-preview`）
 **`--seed=123`** - 用於重現結果的隨機種子
 **`--filename="name"`** - 指定輸出檔名（多張自動加後綴）
 **`--output="path"`** - 指定自訂輸出資料夾（預設：`./nanobanana-output/`）
@@ -487,7 +494,7 @@ cd mcp-server && npm run dev
 
 ### API 整合
 
-- **Model**：`gemini-2.5-flash-image`
+- **Model**：`gemini-2.5-flash-image` / `gemini-3.1-flash-image-preview` / `gemini-3-pro-image-preview`
 - **SDK**：`@google/genai`
 - **Response Handling**：針對圖片資料偵測提供多個備援位置
 

@@ -20,7 +20,7 @@ Valid options:
 - --format="png|jpeg" (default: png)
 - --background="transparent|white|black" or color name (default: transparent)
 - --corners="rounded|sharp" (default: rounded)
-- --resolution=1K|2K|4K (default: 4K, note: 4K only works with gemini-3-pro-image-preview model)
+- --resolution=512|1K|2K|4K (default: 2K, note: 512 only works with gemini-3.1-flash-image-preview model)
 - --filename="name" (optional output filename; suffixes will be added for multiple images)
 - --parallel=N (1-8, default: 2)
 - --output="path" (optional custom output directory path; defaults to ./nanobanana-output/)
@@ -38,7 +38,7 @@ Parse this input and:
 7. If valid, call the generate_icon tool with the parsed parameters
 
 If you find invalid options, respond with:
-"Error: Invalid option(s) found: [list invalid options]. Valid options are: --files (1-14 comma-separated image file paths - can be absolute paths or relative filenames that will be searched in: current directory, ./images/, ./input/, ./nanobanana-output/, ~/Downloads/, ~/Desktop/), --sizes (comma-separated from: 16, 32, 64, 128, 256, 512, 1024), --type (app-icon, favicon, ui-element), --style (flat, skeuomorphic, minimal, modern), --format (png, jpeg), --background (transparent, white, black, or color name), --corners (rounded, sharp), --resolution (1K, 2K, or 4K - note: 4K only works with gemini-3-pro-image-preview model), --filename (string), --parallel (1-8, default: 2), --output (custom output directory path), --preview (flag)"
+"Error: Invalid option(s) found: [list invalid options]. Valid options are: --files (1-14 comma-separated image file paths - can be absolute paths or relative filenames that will be searched in: current directory, ./images/, ./input/, ./nanobanana-output/, ~/Downloads/, ~/Desktop/), --sizes (comma-separated from: 16, 32, 64, 128, 256, 512, 1024), --type (app-icon, favicon, ui-element), --style (flat, skeuomorphic, minimal, modern), --format (png, jpeg), --background (transparent, white, black, or color name), --corners (rounded, sharp), --resolution (512, 1K, 2K, or 4K - note: 512 only works with gemini-3.1-flash-image-preview model), --filename (string), --parallel (1-8, default: 2), --output (custom output directory path), --preview (flag)"
 
 Otherwise, call generate_icon with the validated parameters.
 """
