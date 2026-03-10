@@ -1,12 +1,13 @@
 {
   "name": "nanobanana-extension",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "type": "module",
   "description": "Gemini CLI extension for Nano Banana models",
   "scripts": {
     "build": "cd mcp-server && npm run build",
     "install-deps": "cd mcp-server && npm install",
     "dev": "cd mcp-server && npm run dev",
+    "test:commands": "node --test tests/*.test.mjs",
     "bump": "npm version patch --no-git-tag-version && cd mcp-server && npm version patch --no-git-tag-version && npm install --package-lock-only && cd .. && npm install --package-lock-only",
     "format": "prettier --write .",
     "lint": "eslint . --fix",
