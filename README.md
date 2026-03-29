@@ -1,7 +1,7 @@
 > [!NOTE]
 > 此擴充套件（v1.0.10+）現在已支援 Nano Banana Pro（`gemini-3-pro-image-preview`）與 Nano Banana 2（`gemini-3.1-flash-image-preview`）！
 >
-> 將 `NANOBANANA_MODEL` 環境變數設定為 `gemini-3-pro-image-preview` 或 `gemini-3.1-flash-image-preview` 即可使用。
+> 將 `NANOBANANA_MODEL` 環境變數預設為 `gemini-3.1-flash-image-preview`，你可以調整設定為 `gemini-3-pro-image-preview` 或 `gemini-2.5-flash-image` 即可使用。
 
 # Nano Banana - Gemini CLI 擴充套件
 
@@ -19,11 +19,15 @@
 
 1. 已安裝並完成設定的 **Gemini CLI**
 2. **Node.js 20+** 與 npm
-3. **API Key**：設定下列任一環境變數：
-   - `NANOBANANA_GEMINI_API_KEY`（建議給 Gemini API Key 使用者；通常會在 Gemini CLI 以「Login with Google」方式驗證）
-   - `NANOBANANA_GOOGLE_API_KEY`（建議給 Vertex API Key 使用者；通常會在 Gemini CLI 以「Login with Google」方式驗證）
-   - `GEMINI_API_KEY`（備援）
-   - `GOOGLE_API_KEY`（備援）
+3. **API Key**：請將您的 Gemini API 金鑰設定到名為 `NANOBANANA_API_KEY` 的環境變數中。您可以在 [Google AI Studio](https://aistudio.google.com/apikey) 取得。
+
+   安裝擴充套件時也可以透過 `gemini extensions install` 的設定流程輸入上述金鑰，系統會以 `sensitive` 的方式儲存到系統金鑰圈。可執行：
+
+   ```bash
+   gemini extensions config nanobanana
+   ```
+
+   這樣你就不用把金鑰寫死在 `gemini-extension.json`。
 
 關於驗證設定，請參考 [Gemini CLI 官方文件](https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/authentication.md)。
 
@@ -38,11 +42,11 @@
 
 此擴充套件支援三種 Nano Banana 模型：
 
-- `gemini-2.5-flash-image`（預設）
-- `gemini-3.1-flash-image-preview`（Nano Banana 2）
-- `gemini-3-pro-image-preview`（Nano Banana Pro）
+- `gemini-3.1-flash-image-preview` (Nano Banana 2) (預設)
+- `gemini-3-pro-image-preview` (Nano Banana Pro)
+- `gemini-2.5-flash-image` (Nano Banana 1)
 
-預設使用 `gemini-2.5-flash-image`。
+預設使用 `gemini-3.1-flash-image-preview`。
 
 若要使用 Gemini 3 系列驅動的模型，請將 `NANOBANANA_MODEL` 環境變數設定為 `gemini-3.1-flash-image-preview` 或 `gemini-3-pro-image-preview`。
 
@@ -191,7 +195,7 @@ gemini extensions install https://github.com/doggy8088/nanobanana
 **`--styles="style1,style2"`** - 以逗號分隔的藝術風格清單
 **`--variations="var1,var2"`** - 指定變化類型
 **`--format=grid|separate`** - 輸出格式（預設：separate）
-**`--resolution=512|1K|2K|4K`** - 輸出解析度（預設：2K，`512` 僅支援 `gemini-3.1-flash-image-preview`）
+**`--resolution=512|1K|2K|4K`** - 輸出解析度（預設：1K，`512` 僅支援 `gemini-3.1-flash-image-preview`）
 **`--seed=123`** - 用於重現結果的隨機種子
 **`--filename="name"`** - 指定輸出檔名（多張自動加後綴）
 **`--output="path"`** - 指定自訂輸出資料夾（預設：`./nanobanana-output/`）

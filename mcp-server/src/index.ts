@@ -135,8 +135,8 @@ class NanoBananaServer {
                   type: 'string',
                   enum: ['512', '1K', '2K', '4K'],
                   description:
-                    'Output image resolution (default: 2K)',
-                  default: '2K',
+                    'Output image resolution (default: 1K)',
+                  default: '1K',
                 },
                 parallel: {
                   type: 'number',
@@ -178,8 +178,8 @@ class NanoBananaServer {
                   type: 'string',
                   enum: ['512', '1K', '2K', '4K'],
                   description:
-                    'Output image resolution (default: 2K)',
-                  default: '2K',
+                    'Output image resolution (default: 1K)',
+                  default: '1K',
                 },
                 preview: {
                   type: 'boolean',
@@ -228,8 +228,8 @@ class NanoBananaServer {
                   type: 'string',
                   enum: ['512', '1K', '2K', '4K'],
                   description:
-                    'Output image resolution (default: 2K)',
-                  default: '2K',
+                    'Output image resolution (default: 1K)',
+                  default: '1K',
                 },
                 preview: {
                   type: 'boolean',
@@ -319,8 +319,8 @@ class NanoBananaServer {
                   type: 'string',
                   enum: ['512', '1K', '2K', '4K'],
                   description:
-                    'Output image resolution (default: 2K)',
-                  default: '2K',
+                    'Output image resolution (default: 1K)',
+                  default: '1K',
                 },
                 preview: {
                   type: 'boolean',
@@ -409,8 +409,8 @@ class NanoBananaServer {
                   type: 'string',
                   enum: ['512', '1K', '2K', '4K'],
                   description:
-                    'Output image resolution (default: 2K)',
-                  default: '2K',
+                    'Output image resolution (default: 1K)',
+                  default: '1K',
                 },
                 preview: {
                   type: 'boolean',
@@ -501,8 +501,8 @@ class NanoBananaServer {
                   type: 'string',
                   enum: ['512', '1K', '2K', '4K'],
                   description:
-                    'Output image resolution (default: 2K)',
-                  default: '2K',
+                    'Output image resolution (default: 1K)',
+                  default: '1K',
                 },
                 preview: {
                   type: 'boolean',
@@ -600,8 +600,8 @@ class NanoBananaServer {
                   type: 'string',
                   enum: ['512', '1K', '2K', '4K'],
                   description:
-                    'Output image resolution (default: 2K)',
-                  default: '2K',
+                    'Output image resolution (default: 1K)',
+                  default: '1K',
                 },
                 preview: {
                   type: 'boolean',

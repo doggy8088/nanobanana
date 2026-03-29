@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2025 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
@@ -75,7 +81,7 @@ test('gemini-3.1-flash-image-preview supports 512 resolution and new aspect rati
   }
 });
 
-test('default resolution is 2K when resolution is omitted', async () => {
+test('default resolution is 1K when resolution is omitted', async () => {
   const originalModel = process.env.NANOBANANA_MODEL;
   const originalFetch = global.fetch;
   const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'nb-gen-'));
@@ -118,7 +124,7 @@ test('default resolution is 2K when resolution is omitted', async () => {
     assert.equal(
       (requestBody?.generationConfig as { imageConfig?: { imageSize?: string } })
         ?.imageConfig?.imageSize,
-      '2K',
+      '1K',
     );
   } finally {
     if (originalModel === undefined) {

@@ -16,7 +16,7 @@ test('/generate documents resolution and parallel as valid options', async () =>
 
   assert.match(
     generateCommand,
-    /- --resolution=512\|1K\|2K\|4K \(default: 2K/,
+    /- --resolution=512\|1K\|2K\|4K \(default: 1K/,
   );
   assert.match(
     generateCommand,
